@@ -16,6 +16,15 @@ def get_all_MicroNutrients():
     conn.close()
     return jsonify(rows)
 
+@app.route('/MicroNutrient/<id>', methods = ['GET'])
+def get_micro_by_id():
+    conn = sqlite3.connect("base_de_donnees_micro_nutrition.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM micro_nutrition_cleaned WHERE Compléments= ?", (id,))
+    rows = cursor.fetchall()
+    conn.close()
+    return jsonify(rows)
+
 @app.route('/Pathology', methods = ['GET'])
 def get_all_pathologies():
     conn = sqlite3.connect("base_de_donnees_micro_nutrition.db")
@@ -29,7 +38,7 @@ def get_all_pathologies():
 def get_complements_by_pathology(id):
     conn = sqlite3.connect("base_de_donnees_micro_nutrition.db")
     cursor = conn.cursor()
-    cursor.execute(f"SELECT * FROM micro_nutrition_cleaned WHERE Pathologie=\'{id}\'")
+    cursor.execute("SELECT * FROM micro_nutrition_cleaned WHERE Pathologie= ?", (id,))
     rows = cursor.fetchall()
     conn.close()
     return jsonify(rows)
