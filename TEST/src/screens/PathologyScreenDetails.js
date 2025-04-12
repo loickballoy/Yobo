@@ -11,7 +11,7 @@ const PathologyScreenDetails = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get(`http://192.168.1.90:5000/Pathology/${pathology}`)
+    axios.get(`http://192.168.1.60:5000/Pathology/${pathology}`)
       .then(response => {
         setMicronutrients(response.data);
         setLoading(false);

@@ -1,73 +1,74 @@
+import gspread
 import pandas as pd
-import sqlite3
-import os
+import re
+import json
+from pathlib import Path
 
-file_paths = [
-    "Databases/Base de donées- Micro nutrition - Anxiété.csv",
-    "Databases/Base de donées- Micro nutrition - Beauté de la peau.csv",
-    "Databases/Base de donées- Micro nutrition - Cholesterol.csv",
-    "Databases/Base de donées- Micro nutrition - Dépression.csv",
-    "Databases/Base de donées- Micro nutrition - Diabète.csv",
-    "Databases/Base de donées- Micro nutrition - HTA.csv",
-    "Databases/Base de donées- Micro nutrition - Ménopause.csv",
-    "Databases/Base de donées- Micro nutrition - Sommeil.csv",
-    "Databases/Base de donées- Micro nutrition - SPM Règles douloureuses.csv"
-]
+# === CONFIGURATION ===
+SHEET_ID = "1g_8ETAvX5H08vR7j2fCDwaVz_mK1IEh_3wFa8QrU1GE"  # <- remplace ça par l'ID de ton Google Sheet "1g_8ETAvX5H08vR7j2fCDwaVz_mK1IEh_3wFa8QrU1GE"
+SERVICE_ACCOUNT_FILE = "../Databases/mukaproject-d1ceac584717.json"
+EXPORT_FILE = "../Databases/micronutrients_clean.json"
 
-# Fonction pour charger et ajouter une colonne "Pathologie"
-def load_and_add_pathology(file_path):
-    # Déduire la pathologie à partir du nom du fichier
-    pathology = os.path.basename(file_path).split("-")[-1].strip().replace(".csv", "")
-    
-    # Charger le fichier CSV
-    df = pd.read_csv(file_path)
-    
-    # Ajouter la colonne "Pathologie"
-    df["Pathologie"] = pathology
-    
-    return df
+COLUMN_KEYWORDS = {
+    "Complement_Alimentaire": r"compl[eé]ment.*alimentaire",
+    "Effets_Indesirables": r"effets.*(indésirable|secondaire)|contre.*indication",
+    "Interactions_Pro": r"interaction.*pro",
+    "Interactions_Patient": r"interaction.*patient",
+    "Recommandations": r"recommandation"
+}
 
-# Charger et combiner tous les fichiers
-dataframes = [load_and_add_pathology(fp) for fp in file_paths]
+def match_column(header_row):
+    matched = {}
+    for col_name, pattern in COLUMN_KEYWORDS.items():
+        for i, cell in enumerate(header_row):
+            if re.search(pattern, cell.strip().lower()):
+                matched[col_name] = i
+                break
+    return matched
 
-# Identifier les colonnes communes et gérer les colonnes manquantes
-all_columns = set(col for df in dataframes for col in df.columns)
-for df in dataframes:
-    missing_columns = all_columns - set(df.columns)
-    for col in missing_columns:
-        df[col] = None  # Ajouter les colonnes manquantes avec des valeurs vides
+# === Connexion à Google Sheets ===
+gc = gspread.service_account(filename=SERVICE_ACCOUNT_FILE)
+spreadsheet = gc.open_by_key(SHEET_ID)
+worksheets = spreadsheet.worksheets()
 
-# Consolider toutes les données
-all_data = pd.concat(dataframes, ignore_index=True)
+# === Lecture et nettoyage ===
+cleaned_data = []
 
-# Nettoyage minimal : suppression des lignes entièrement vides
-all_data.dropna(how="all", inplace=True)
+for ws in worksheets:
+    pathologie = ws.title
+    raw_data = ws.get_all_values()
+    if len(raw_data) < 3:
+        continue
 
-# Connexion à SQLite et sauvegarde des données
-conn = sqlite3.connect("base_de_donnees_micro_nutrition.db")
-all_data.to_sql("micro_nutrition", conn, if_exists="replace", index=False)
+    # Chercher la première ligne avec des en-têtes utiles
+    header_idx = None
+    for idx, row in enumerate(raw_data[:10]):  # check les 10 premières lignes max
+        if any(re.search(r"compl[eé]ment.*alimentaire", cell.lower()) for cell in row):
+            header_idx = idx
+            break
 
-query = "SELECT * FROM micro_nutrition"
+    if header_idx is None:
+        print(f"[⚠️] En-tête non détecté pour la feuille {pathologie}")
+        continue
 
-# Charger la table existante
-all_data = pd.read_sql_query("SELECT * FROM micro_nutrition", conn)
+    headers = raw_data[header_idx]
+    content = raw_data[header_idx + 1:]
+    col_matches = match_column(headers)
 
-# Suppression des deux premières colonnes
-all_data = all_data.iloc[:, 2:]
+    for row in content:
+        entry = {"Pathologie": pathologie}
+        for col_name, idx in col_matches.items():
+            if idx < len(row):
+                entry[col_name] = row[idx].strip()
+        cleaned_data.append(entry)
 
-# Renommer les colonnes restantes
-all_data.columns = ["Compléments", "Effets indésirables", "Interactions", "Pathologie"]
+# === Export JSON
+if cleaned_data:
+    output_path = Path(EXPORT_FILE)
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(cleaned_data, f, ensure_ascii=False, indent=2)
+    print(f"[✅] Données exportées : {output_path.resolve()}")
+else:
+    print("[❌] Aucune donnée exportée. Vérifiez la structure des feuilles.")
 
-# Supprimer les lignes où toutes les colonnes sont NULL
-all_data.dropna(subset=['Compléments'], inplace=True)
-
-all_data = all_data.iloc[1:,:]
-
-# Exporter la table nettoyée dans la base SQLite
-all_data.to_sql("micro_nutrition_cleaned", conn, if_exists="replace", index=False)
-
-# Fermer la connexion
-conn.close()
-
-print("Les données ont été nettoyées et exportées dans la table 'micro_nutrition_cleaned'.")
-
+ 
