@@ -7,7 +7,7 @@ import sqlite3
 app = Flask(__name__)
 CORS(app)
 
-DATA_FILE = Path("../Databases/micronutrients_clean.json")
+DATA_FILE = Path("Databases/micronutrients_clean.json")
 
 try:
     with open(DATA_FILE, "r", encoding="utf-8") as f:
