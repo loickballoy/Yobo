@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "mukaproject",
+  "private_key_id": "d1ceac5847174dfa76ea1160e5d8b8e3095ffcc2",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDQHYb88LqLLkS4\nzlCJUnFzzKzz0wfJWqFGJHbQLXJXX0EE+JUny4QOKKVwuyFaBk9HNgYHzKVyfmPz\nyCA+zLoIvwjTpwFs60AYFfNMqIz+OPLnS/XVN9Zua+SXV2EVcdpKRC+mZpKnsY8W\nUI0iJg28msSsMDvASNEkSGkX9ipw0fBNoNvHcGd8HQ8CtzqnJcsimAnFpAdigiPW\nlReAJW0lwATw9RNfhoS0p6AmJ/htMu13UdaJ91mi2SjWIdbN8GCf3FgAq1MusgsU\ndbK3weJj4REtYBK7rhMUgt2Qf4udjn/ozabySQmsgo93GKAvsJ0UXl6kk9/jP6r3\nGVy/ae3nAgMBAAECggEAXGWnn1gfchiWMTiEIBumvCNUbCI2tEpVDMe2qmFrAOiM\n/PCChDsCg6i/Hugt/AKOIw8UqVTN5aHAraSd0FPjimuKNzHP27QsbiUcsl2oz1uo\nWFFssP/L55VmVVzZgQRdxpg0UZv7o5Ec9mrH5i/f7GsIQ2xcsteBZyrw4c8Mc66s\nmUirhsZHp5om2HHRtZazi1IIhNfh+cI6gEbwtb9M20QnY8g0aErUx8jkDgxNsUee\nasJiBVnS8jq9nMzxTz+EQatZvtjLHVtzGVa6unfIHBO0uiqmwk7wXb6npgC60RIu\nhpCb5q1WieNtFBMZ9NI5yGoXAKKSeAARA4JOmXdLlQKBgQDprWEobF2wytAQl3Vq\nTLn4oRNyXtR1qyF84j/pOY8dAGFNnJTK/27vhAbBh6GVczzjKFNSxe+sFNBi+pFb\nWxh+WDLB/NNTvTJDUEKkVIH/u9gyVbxXMhJRkv1rpq1KYej5lW+yP3O9/S2SmitA\nOAoHhQk0yr0g9OVkV+qWleowpQKBgQDj/wa4U8kQSWu7LnNVdHBF54Qb4htWYjio\nPAoa2zDFV+Bn/u0UlGnfanZrTyOY20UVIa4mA2fT4Tmb+jQ6AU6aldSAIKLIFmRf\nvdA5ZYB3+4cfoBsQj3LhvcfcJaxBqnYXmMVzXqT7c3x3Tx5xWWBXjXWyKmHfYOtl\nIjjOvhFymwKBgQDpUhnJv/IInWkEuAYf3n5uN37wWqlu2DF2vX2tBLDV91Qwp2CW\nFFgTRVNtl1yKmea4tcIEyuhVfO7ZdXD/s8SQGsaLlUL4wNdYCOKRrGOlEk17bMnC\nkpdh5g+tll4+/+Ycls5RPzP1Br+jOtZmp82z1mzrzmbrajtFZtcwBn4wlQKBgH+M\n1P2aIgnyiUqWmf9cvNLeypGu1Qxmtrunmx+bMJW2q9yCSbARt4k9zjIKfCevw94m\nkX7CuPtYLRqNx1oMESV6XP+xQmAd5tmJH0x89HorRVT0BTAmkGap/X2ztcKm0pow\n5YW9lR73ZNJ6eNWA4t0YTpf2DfsiBY72rkE7JBexAoGAbvl0IBTOsD47gMFBehVW\noDyU+SJ2SmrMzX0UQSvLVZEcKqGIUrH4fTD6UDR1lqiNTZpKYaH1IA/TCBe4wtRe\nXBtPUzwRFDOF5T6WROzW2JCithzvWwNWCrnQMV5Fe7jTEV8hvrZjf5ZXXmoKQzd2\n8b/71aqxRY8sDS5DZ5DloaA=\n-----END PRIVATE KEY-----\n",
+  "client_email": "mukadb-253@mukaproject.iam.gserviceaccount.com",
+  "client_id": "110941842062221213216",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/mukadb-253%40mukaproject.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

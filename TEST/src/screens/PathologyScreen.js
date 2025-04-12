@@ -1,102 +1,112 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, StyleSheet } from "react-native";
+// PathologyScreen.js
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, Animated } from "react-native";
 import axios from "axios";
-import { NavigationContainer } from "@react-navigation/native";
-import { createStackNavigator, TransitionSpecs, CardStyleInterpolators } from "@react-navigation/stack";
+import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
-const pathologyList = [
-    "Anxiété", "Beauté de la peau", "Cholestérol", "Dépression", "Diabète",
-    "Hypertension artérielle", "Ménopause", "Trouble du sommeil", "SPM / Règles douloureuses"
-  ];
+const API_BASE = "http://192.168.1.60:5000"; // adapte cette IP à ton environnement
 
-const PathologyScreen = ({ navigation }) => {
-    const [selectedPathology, setSelectedPathology] = useState(null);
-    const [micronutrients, setMicronutrients] = useState([]);
-    const [loading, setLoading] = useState(false);
+const PathologyScreen = () => {
+    const [pathologies, setPathologies] = useState([]);
+    const [expanded, setExpanded] = useState({});
+    const [complements, setComplements] = useState({});
+    const [loading, setLoading] = useState(true);
+    const animationValues = useRef({}).current;
+    const navigation = useNavigation();
 
-    const fetchMicronutrients = (pathology) => {
-        setSelectedPathology(pathology);
-        setLoading(true);
-        axios.get(`http://192.168.1.90:5000/Pathology/${pathology}`)
-          .then(response => {
-            setMicronutrients(response.data);
-            setLoading(false);
-          })
-          .catch(error => {
-            console.error("Error fetching details:", error);
-            setLoading(false);
-          });
-      };
+    useEffect(() => {
+        axios.get(`${API_BASE}/pathologies`)
+            .then(res => {
+                setPathologies(res.data);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error("Erreur lors du chargement des pathologies:", err);
+                setLoading(false);
+            });
+    }, []);
+
+    const togglePathology = async (pathology) => {
+        const isExpanding = !expanded[pathology];
+        setExpanded(prev => ({ ...prev, [pathology]: isExpanding }));
+
+        if (!complements[pathology]) {
+            try {
+                const res = await axios.get(`${API_BASE}/complements/${encodeURIComponent(pathology)}`);
+                setComplements(prev => ({ ...prev, [pathology]: res.data }));
+            } catch (err) {
+                console.error("Erreur lors du chargement des compléments:", err);
+            }
+        }
+
+        if (!animationValues[pathology]) {
+            animationValues[pathology] = new Animated.Value(0);
+        }
+        Animated.timing(animationValues[pathology], {
+            toValue: isExpanding ? 1 : 0,
+            duration: 300,
+            useNativeDriver: false,
+        }).start();
+    };
+
+    const goToMicronutrientDetails = (name) => {
+        navigation.navigate("MicronutrientDetailsScreen", { name });
+    };
+
+    const renderComplementList = (pathology) => {
+        const height = animationValues[pathology]?.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, (complements[pathology]?.length || 0) * 44],
+        }) || new Animated.Value(0);
+
+        return (
+            <Animated.View style={{ height, overflow: "hidden" }}>
+                {complements[pathology]?.map((item, idx) => (
+                    <TouchableOpacity key={idx} style={styles.complementItem} onPress={() => goToMicronutrientDetails(item)}>
+                        <Text style={styles.complementText}>{item}</Text>
+                    </TouchableOpacity>
+                ))}
+            </Animated.View>
+        );
+    };
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Sélectionnez une Pathologie</Text>
-            <FlatList
-                data={pathologyList}
-                keyExtractor={(item, index) => index.toString()}
-                renderItem={({ item }) => (
-                <TouchableOpacity 
-                    style={styles.item} 
-                    onPress={() => navigation.navigate("PathologyScreenDetails", {pathology : item})}>
-                    <Text style={styles.itemText}>{item}</Text>
-                </TouchableOpacity>
+            {loading ? (
+                <ActivityIndicator size="large" color="#89CFF0" />
+            ) : (
+                <FlatList
+                    data={pathologies}
+                    keyExtractor={(item) => item}
+                    renderItem={({ item }) => (
+                        <View>
+                            <TouchableOpacity onPress={() => togglePathology(item)} style={styles.pathologyItem}>
+                                <Text style={styles.pathologyText}>{item}</Text>
+                                <Ionicons name={expanded[item] ? "chevron-up" : "chevron-down"} size={20} color="#fff" />
+                            </TouchableOpacity>
+                            {renderComplementList(item)}
+                        </View>
+                    )}
+                />
             )}
-            />
-      
-            {/* Bottom Navigation Bar */}
-            <View style={styles.bottomNavContainer}>
-            <View style={styles.bottomNavLine} />
-            <View style={styles.bottomNavBackground} />
-            <View style={styles.bottomNav}>
-            <TouchableOpacity onPress={() => navigation.navigate("PathologyScreen")}>
-                <Ionicons name="list-outline" size={28} color="#89CFF0" />
-            </TouchableOpacity>
-          
-            <TouchableOpacity onPress={() => navigation.navigate("ScanScreen")}>
-                <Ionicons name="scan-outline" size={32} color="#89CFF0" />
-            </TouchableOpacity>
-          
-            <TouchableOpacity onPress={() => navigation.navigate("RechercheScreen")}>
-                <Ionicons name="search-outline" size={28} color="#89CFF0" />
-            </TouchableOpacity>
         </View>
-      </View>
-    </View>
-  );
+    );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#0A1128" },
-  title: { fontSize: 24, color: "#89CFF0", marginBottom: 10, textAlign: "center" },
-  item: { padding: 15, borderBottomWidth: 1, borderColor: "#89CFF0" },
-  itemText: { fontSize: 18, color: "#fff" },
-
-  bottomNavContainer: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    alignItems: "center",
-  },
-  bottomNavLine: {
-    width: "100%",
-    height: 2,
-    backgroundColor: "#89CFF0", // Light Blue Line Separator
-    marginBottom: 5,
-  },
-  bottomNavBackground: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    height: 60, // Adjust as needed
-    backgroundColor: "rgba(10, 17, 40, 0.9)", // Dark Blue with Opacity
-  },
-  bottomNav: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    paddingVertical: 10,
-  },
+    container: { flex: 1, padding: 20, backgroundColor: "#0A1128" },
+    pathologyItem: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: "#89CFF0"
+    },
+    pathologyText: { fontSize: 18, color: "#fff" },
+    complementItem: { paddingLeft: 20, paddingVertical: 12, backgroundColor: "#001F54" },
+    complementText: { fontSize: 16, color: "#89CFF0" }
 });
 
 export default PathologyScreen;
