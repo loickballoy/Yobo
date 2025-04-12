@@ -6,8 +6,8 @@ from pathlib import Path
 
 # === CONFIGURATION ===
 SHEET_ID = "1g_8ETAvX5H08vR7j2fCDwaVz_mK1IEh_3wFa8QrU1GE"  # <- remplace ça par l'ID de ton Google Sheet "1g_8ETAvX5H08vR7j2fCDwaVz_mK1IEh_3wFa8QrU1GE"
-SERVICE_ACCOUNT_FILE = "../Databases/mukaproject-d1ceac584717.json"
-EXPORT_FILE = "../Databases/micronutrients_clean.json"
+SERVICE_ACCOUNT_FILE = "Databases/mukaproject-d1ceac584717.json"
+EXPORT_FILE = "Databases/micronutrients_clean.json"
 
 COLUMN_KEYWORDS = {
     "Complement_Alimentaire": r"compl[eé]ment.*alimentaire",

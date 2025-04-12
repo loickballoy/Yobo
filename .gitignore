@@ -2,3 +2,5 @@ __pycache__/
 venv/
 TEST/.idea/
 .idea/
+TEST/.idea
+.idea
