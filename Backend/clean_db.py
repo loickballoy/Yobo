@@ -5,8 +5,8 @@ import json
 from pathlib import Path
 
 # === CONFIGURATION ===
-SHEET_ID = "1g_8ETAvX5H08vR7j2fCDwaVz_mK1IEh_3wFa8QrU1GE"  # <- remplace ça par l'ID de ton Google Sheet "1g_8ETAvX5H08vR7j2fCDwaVz_mK1IEh_3wFa8QrU1GE"
-SERVICE_ACCOUNT_FILE = "Databases/mukaproject-d1ceac584717.json"
+SHEET_ID = "1megV5iV3BObRDTqFp2Od-50Sedsv257jLnxziAA3dN0"  # <- remplace ça par l'ID de ton Google Sheet "1g_8ETAvX5H08vR7j2fCDwaVz_mK1IEh_3wFa8QrU1GE"
+SERVICE_ACCOUNT_FILE = "Databases/mukanew-4a4f2dd7432c.json"
 EXPORT_FILE = "Databases/micronutrients_clean.json"
 
 COLUMN_KEYWORDS = {
@@ -14,8 +14,17 @@ COLUMN_KEYWORDS = {
     "Effets_Indesirables": r"effets.*(indésirable|secondaire)|contre.*indication",
     "Interactions_Pro": r"interaction.*pro",
     "Interactions_Patient": r"interaction.*patient",
-    "Recommandations": r"recommandation"
+    "Recommandations": r"recommandation",
+    "Posologie": r"posologie",
+    "Forme": r"forme",
+    "Indication": r"indication",
+    "Cibles": r"cible.*",
+    "Sources": r"source",
+    "CategoryName": r"category\s*name",
+    "Barcode": r"barcode",
+    "Display_Image": r"display.*image"
 }
+
 
 def match_column(header_row):
     matched = {}
