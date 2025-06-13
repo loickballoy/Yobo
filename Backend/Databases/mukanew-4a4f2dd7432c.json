@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "mukanew",
+  "private_key_id": "4a4f2dd7432cb95ec5223f53da35cc4134d8e80c",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDYXrbrwly+CUJo\nZaIY+UX9SjTdUF4kHA7uP01Z8ddG0JGeyBLoLfvrxVkgyaw20JLnvPAT3GIcbHwy\neETr8vvuELRMhwAvtyQeCVdMudaH1GF9zcDwx6GnZH2IgrLRDNy6Mqd99CWGv7Zy\nPoU5GjwGhcZ5LDy92Tmxq8lafK2ghKX+PnDZdnzz6c3XMm5cr+S41bA0L98AAjck\nqnj6V6Momvixe1M56f54MYS95Gt5SUGjh24fdmjdwQwEcaQpDkSDJxyIbreaSxEm\npolPLpl7TIYF9d8WgF2liUdeEmxq2Co6K0sR0bfomyLgZM+tjo/dQHL0JoELX1eF\nvSupH2p3AgMBAAECggEADpqF72+qNswFMWqlVYOC7STptdj2IasgeYVy676I8Hyk\noiTlhx+OFfcMnEvrAGAff4ifDkLHqcd2B9Svl4VKP7fc6Mq2gSyelsW79gUXrQnx\nR+kakVBytrZE9XEXhJ3rn/L0nxRaxreAfEGAAxSkNy8m8DLDfsTUl2CoMcqh0BLu\nt9I1r1qhn6HnDcat4iMtVM4qtPGX0jiydADDl8QBgpwWQ1BCz9fPSL+XvD1LHfu7\ns81qPgIHyN7Y9NrVK3+sV/Hmey6orPBJpQ6RroDt1AsKA4dxNcjGZ5sHCd8osYxc\nK0kiincliQv3RigLbx4BLczwL9YGadF2pMwYuv1fUQKBgQD9sXhzWG0ubjTcSE1I\nG2mpJInjAOZ6QHVOmavIVE7qxAwcNKbB/u5RFgTUjVH6XYu+vnp0tfGsKdnfZEqm\nfvPM9ZRq9i5WggX67PrW7A3o7cY2uKb2hUUbAXFmSds60ujhU24t9Q6k2hYU5PLT\ny5uF9FUtO/UJxy9lGmz5A8oJawKBgQDaVl2S7Hjy3yuWBMhPEUEEItoMOD8f7SoY\nnaMnw1eMmo8yVN3IDRw3BCxtwlGU/nvIml2wGUnBW5aBuAwskALJN6JLklb/Tzve\nx8yQy9iO7dr/K5RQyXK7bFWw4ABBy86LPxiazRsLVDEAbrG/RzlvoGoOxUydM+mL\nWSLjy8GqJQKBgDAJ/R8KbZJPOB9Gaavv1PA8hQfBUeNwdUYu/0JuBIucGBb3OWSe\n243rN3rwT8ezExVJiHK1SVAqlKEioqgofg4fqr0eZOPoty0u1sj/5hpnfBM8oBEq\nZ02X1ltiPOtEqOiSHdkCAIXi7i+CsyC7+3VAMSjho6L4XtcsS9pTh1yFAoGAH27N\nm+hVZUnBwaBAojlurcTCtX2ngNYo+FBBe+kAgqqBsRJMt49Dn5wHNWoDSrr0YSXw\nFPkfCCpCWbyAbC3zaLqMr+qKgckLaoBDMBlYvQL7Qz8n5BWMYfUvxP4Kq25G9v8H\ncMnUeeYOA+zrxAjh+PMUMbov1HXzym7zue3MnM0CgYEA4gftTJ92lF/pRrAQuNEK\nW6Jccyx5dopzi5zFrBhYTRuvaDQsvRtsWH7YGCVdv/y4lUY/rwPWf22397S2yr7R\ndJR5IndnnHwE8cfI0tQyVcBiXzqWOAu5hm53+Jf4WUFiQtA0X1Bw/drDusA37iB5\nXe1ljCxTRILgE8mYFccm7U4=\n-----END PRIVATE KEY-----\n",
+  "client_email": "mukaspy@mukanew.iam.gserviceaccount.com",
+  "client_id": "115867538597591186384",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/mukaspy%40mukanew.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
