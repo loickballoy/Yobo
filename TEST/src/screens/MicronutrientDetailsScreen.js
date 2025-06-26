@@ -9,12 +9,12 @@ const API_BASE = "http://192.168.1.60:5001";
 const MicronutrientDetailsScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
-  const { name } = route.params;
+  const { name, pathology } = route.params;
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get(`${API_BASE}/complement/${encodeURIComponent(name)}`)
+    axios.get(`${API_BASE}/complement/${encodeURIComponent(pathology)}/${encodeURIComponent(name)}`)
       .then(res => {
         setData(res.data);
         setLoading(false);
@@ -39,21 +39,23 @@ const MicronutrientDetailsScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
-      {loading ? (
-        <ActivityIndicator size="large" color="#003B73" />
-      ) : (
-        data.map((item, idx) => (
-          <View key={idx} style={styles.card}>
-            <Text style={styles.title}>{item.Complement_Alimentaire}</Text>
-            {item.Effets_Indesirables && <Text style={styles.section}><Text style={styles.label}>Effets :</Text> {item.Effets_Indesirables}</Text>}
-            {item.Interactions_Pro && <Text style={styles.section}><Text style={styles.label}>Interactions Pro :</Text> {item.Interactions_Pro}</Text>}
-            {item.Interactions_Patient && <Text style={styles.section}><Text style={styles.label}>Interactions Patient :</Text> {item.Interactions_Patient}</Text>}
-            {item.Recommandations && <Text style={styles.section}><Text style={styles.label}>Recommandations :</Text> {item.Recommandations}</Text>}
-            <Text style={styles.pathology}>📌 Pathologie : {item.Pathologie}</Text>
-          </View>
-        ))
-      )}
-    </ScrollView>
+  {loading ? (
+    <ActivityIndicator size="large" color="#003B73" />
+  ) : (
+    data.map((item, idx) => (
+      <View key={idx} style={styles.card}>
+        {Object.entries(item).map(([key, value]) => (
+          value?.trim() ? (
+            <Text key={key} style={styles.section}>
+              <Text style={styles.label}>{key.replace(/_/g, " ")}:</Text> {value}
+            </Text>
+          ) : null
+        ))}
+      </View>
+    ))
+  )}
+  </ScrollView>
+    
   );
 };
 

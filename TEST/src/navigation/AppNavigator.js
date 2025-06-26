@@ -10,6 +10,7 @@ import PathologyScreen from "../screens/PathologyScreen";
 import ScanScreen from "../screens/ScanScreen";
 import RechercheScreen from "../screens/RechercheScreen";
 import MicronutrientDetailsScreen from "../screens/MicronutrientDetailsScreen";
+import ScanResultScreen from "../screens/ScanResultScreen";
 
 const RootStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -57,6 +58,11 @@ export default function AppNavigator() {
           component={MicronutrientDetailsScreen}
           options={{ title: "Complément" }}
         />
+        <RootStack.Screen
+          name="ScanResultScreen"
+          component={ScanResultScreen}
+          options={{ presentation: 'modal', headerShown: false }}
+          />
       </RootStack.Navigator>
     </NavigationContainer>
   );

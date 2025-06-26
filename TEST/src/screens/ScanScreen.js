@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { CameraView, Camera, CameraType, useCameraPermissions } from 'expo-camera';
 import axios from "axios";
 import { Ionicons } from "@expo/vector-icons";
+import {useRoute, useNavigation} from "@react-navigation/native"
 
 const API_BASE = "http://192.168.1.60:5001";
 
@@ -11,6 +12,7 @@ const ScanScreen = () => {
   const facing= useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  const navigation = useNavigation();
 
   useEffect(() => {
     const getCameraPermissions = async () => {
@@ -21,18 +23,23 @@ const ScanScreen = () => {
     getCameraPermissions();
   }, []);
 
+
   const handleBarcodeScanned = async ({ type, data }) => {
+    if (scanned) return;
+    setScanned(true); // Stop future scans
+    console.log("Code trouvé :", data);
+
+    
     try{
-      setScanned(true);
-      console.log("Code EAN trouvé", data);
-      const response = await axios.get(`${API_BASE}/qrcode/${data}`);
+       navigation.navigate("ScanResultScreen", {ean: data});
+
     }
     catch (err){
       console.error("Scan error", err);
       Alert.alert("Erreur de scan");
     }
     finally {
-      setScanned(false);
+      setTimeout(() => setScanned(false), 3000);
     }
     
   };
@@ -51,7 +58,7 @@ const ScanScreen = () => {
 
       <View style={styles.cameraWrapper}>
         <CameraView
-          onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
+          onBarcodeScanned={handleBarcodeScanned}
           barcodeScannerSettings={{
             barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code39', 'code128'],
           }}
