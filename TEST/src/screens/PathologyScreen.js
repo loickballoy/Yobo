@@ -50,8 +50,8 @@ const PathologyScreen = () => {
     }).start();
   };
 
-  const goToMicronutrientDetails = (name) => {
-    navigation.navigate("MicronutrientDetailsScreen", { name });
+  const goToMicronutrientDetails = (name, pathology) => {
+    navigation.navigate("MicronutrientDetailsScreen", { name, pathology });
   };
 
   const renderComplementList = (pathology) => {
@@ -63,7 +63,7 @@ const PathologyScreen = () => {
     return (
       <Animated.View style={{ height, overflow: "hidden" }}>
         {complements[pathology]?.map((item, idx) => (
-          <TouchableOpacity key={idx} style={styles.complementItem} onPress={() => goToMicronutrientDetails(item)}>
+          <TouchableOpacity key={idx} style={styles.complementItem} onPress={() => goToMicronutrientDetails(item, pathology)}>
             <Text style={styles.complementText}>{item}</Text>
           </TouchableOpacity>
         ))}

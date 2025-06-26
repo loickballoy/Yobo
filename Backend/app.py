@@ -5,12 +5,17 @@ from pathlib import Path
 from eansearch import EANSearch
 import sqlite3
 import gspread
+from clean_db import clean_db
+from push_db import push_db
+
+#clean_db()
 
 app = Flask(__name__)
 EAN_API_TOKEN="d016ac8894202cee4195ac5faa82037baa4a300e"
 CORS(app)
 
 DATA_FILE = Path("Databases/micronutrients_clean.json")
+
 
 # === CONFIGURATION ===
 SHEET_ID = "1megV5iV3BObRDTqFp2Od-50Sedsv257jLnxziAA3dN0"  # <- remplace ça par l'ID de ton Google Sheet "1g_8ETAvX5H08vR7j2fCDwaVz_mK1IEh_3wFa8QrU1GE"
@@ -26,12 +31,44 @@ except Exception as e:
     print("[❌] Erreur de chargement des données : {e}")
 
 def update_barcode_in_sheet(name, ean):
-    gc = gspread.service_account(filename=SERVICE_ACCOUNT_FILE)
-    spreadsheet = gc.open_by_key(SHEET_ID)
+    if not DATA_FILE.exists():
+        print("file not found")
+        return
 
-    for ws in spreadsheet.worksheets():
+    with open(DATA_FILE, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    name = name.strip().lower()
+    updates_made = 0
+
+    for entry in data:
+        comp_name = entry.get("Complément Alimentaire", "").strip().lower()
+        barcode = entry.get("Barcode", "").strip()
+
+        if comp_name in name and not barcode:
+            entry["Barcode"] = ean
+            updates_made += 1
+            print(f"[📝] Barcode ajouté à {name}")
+
+    if updates_made > 0:
+        with open(EXPORT_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        print(f"[✅] {updates_made} lignes mises a jour pour {name}")
+    else:
+        print(f"[❌] {updates_made} Aucun complément trouvé avec le nom: {name}")
+    
+    #TODO: PUSH THE LOCAL JSON TO OLIVIA GOOGLE SHEETS
+    push_db(name, ean)
+
+
+
+    """for ws in spreadsheet.worksheets():
+        
         values = ws.get_all_values()
-
+        
+        if not values:
+            continue
+        print("somthing")
         # Cherche l’index des colonnes
         headers = values[0]
         try:
@@ -41,13 +78,23 @@ def update_barcode_in_sheet(name, ean):
             continue  # Colonne non présente
 
         # Parcourt les lignes pour trouver le complément
+        print("befor")
         for idx, row in enumerate(values[1:], start=2):  # ligne 2 = idx=1 => start=2 pour gspread
-            if row[name_col].strip().lower() == name.strip().lower():
-                current_barcode = row[barcode_col] if barcode_col < len(row) else ""
-                if not current_barcode.strip():
+            if name_col >= len(row):
+                continue
+            row_name = row[name_col].strip().lower()
+            print(row_name)
+
+            if row_name == name:
+                if barcode_col >= len(row) or not row[barcode_col].strip():
                     ws.update_cell(idx, barcode_col + 1, ean)  # gspread indexe les colonnes à partir de 1
+                    updates_made += 1
                     print(f"[📝] Barcode ajouté à {name} dans la feuille {ws.title}")
-                return  # Stop après la première correspondance
+        
+        if updates_made == 0:
+            print(f"[✅] Aucun complément trouvé avec le nom: {name}")
+        else:
+            print(f"[❌] {updates_made} lignes mises a jour pour {name}")"""
 
 @app.route('/', methods = ['GET'])
 def get_hello():
@@ -67,17 +114,27 @@ def get_complements_by_pathologie(pathologie):
     complements = set()
     for entry in micronutrient_data:
         if entry.get("Pathologie", "").lower() == pathologie.lower():
-            comp = entry.get("Complement_Alimentaire")
+            comp = entry.get("Complément Alimentaire")
             if comp:
                 complements.add(comp.strip())
     return jsonify(sorted(complements))
 
-@app.route("/complement/<nom>", methods=["GET"])
-def get_complement_details(nom):
+@app.route("/complement/<pathologie>/<nom>", methods=["GET"])
+def get_complement_details(pathologie ,nom):
     results = []
     for entry in micronutrient_data:
-        comp = entry.get("Complement_Alimentaire", "").lower()
-        if comp.startswith(nom.lower()):
+        comp = entry.get("Complément Alimentaire", "").lower()
+        comp2 = entry.get("Pathologie", "").lower()
+        if comp in nom.lower() and comp2.startswith(pathologie.lower()):
+            results.append(entry)
+    return jsonify(results)
+
+@app.route("/complement/<nom>", methods=["GET"])
+def get_complements(nom):
+    results = []
+    for entry in micronutrient_data:
+        comp = entry.get("Complément Alimentaire", "").lower()
+        if comp in nom.lower():
             results.append(entry)
     return jsonify(results)
 
@@ -104,9 +161,10 @@ def get_product(ean):
     
     #TODO WORK AGAIN
     result = next((entry for entry in micronutrient_data if entry.get("Barcode", "").strip() == ean), None)
+    print(result)
 
     if result:
-        return jsonify(result)
+        return jsonify({"name": result.get("Complément alimentaire")})
 
     lookup = EANSearch(EAN_API_TOKEN)
     name = lookup.barcodeLookup(ean)
@@ -119,6 +177,15 @@ def get_product(ean):
     update_barcode_in_sheet(product["name"], ean)
 
     #TODO display
+
+    return jsonify({
+        "name": product.get("name"),
+        "category": product.get("categoryName"),
+        "country": product.get("issuingCountry"),
+        "ean": ean,
+    })
+
+
 
 
 
