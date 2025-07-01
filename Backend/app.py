@@ -162,8 +162,8 @@ def get_product(ean):
     #TODO WORK AGAIN
     result = next((entry for entry in micronutrient_data if entry.get("Barcode", "").strip() == ean), None)
     for entry in micronutrient_data:
-        print(len(entry.get("Barcode", "").strip().split(',')))
-        print(entry.get("Barcode", "").strip().split(','))
+        #print(len(entry.get("Barcode", "").strip().split(',')))
+        #print(entry.get("Barcode", "").strip().split(','))
         if len(entry.get("Barcode", "").strip().split(',')) > 1:
             print(entry.get("Barcode", "").strip().split(',')[1])
 
