@@ -45,7 +45,7 @@ def update_barcode_in_sheet(name, ean):
         comp_name = entry.get("Complément Alimentaire", "").strip().lower()
         barcode = entry.get("Barcode", "").strip()
 
-        if comp_name in name and not barcode:
+        if comp_name in name:
             entry["Barcode"] = ean
             updates_made += 1
             print(f"[📝] Barcode ajouté à {name}")
