@@ -650,7 +650,7 @@
     "Display Image": ""
   },
   {
-    "Pathologie": "Sommeil",
+    "Pathologie": "Fatigue",
     "Complément Alimentaire": "Magnésium",
     "Dose Quotidienne Recommandée": "200 à 400 mg/jour (sel organique type bisglycinate ou citrate)",
     "Indications": "Réduit le stress, la fatigue et les crampes musculaires.",
@@ -741,7 +741,7 @@
     "Display Image": ""
   },
   {
-    "Pathologie": "Fatigue",
+    "Pathologie": "",
     "Complément Alimentaire": "",
     "Dose Quotidienne Recommandée": "",
     "Indications": "",
@@ -1141,19 +1141,6 @@
     "Recommandations": "Surveiller la glycémie si Gymnema est associée à un traitement antidiabétique.\n\nPrudence chez les patients prenant plusieurs médicaments, notamment ceux métabolisés par le foie.\n\nAdapter les posologies si des modifications cliniques sont observées.\n\nÉviter la Gymnema chez les femmes enceintes ou allaitantes.\n\nSignaler tout symptôme inhabituel (tremblements, étourdissements, fatigue, saignements) à un professionnel de santé.",
     "DisplayName": "",
     "Barcode": "",
-    "Display Image": ""
-  },
-  {
-    "Pathologie": "Diabète",
-    "Complément Alimentaire": "",
-    "Dose Quotidienne Recommandée": "",
-    "Indications": "",
-    "Effets Indésirables/Contre-Indications": "",
-    "Interactions Médicamenteuses PS": "",
-    "Effet pour le patient": "",
-    "Recommandations": "",
-    "DisplayName": "",
-    "Barcode": "3760155212471,granions magnésium 360mg 60comp",
     "Display Image": ""
   },
   {

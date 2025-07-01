@@ -8,7 +8,7 @@ import gspread
 from clean_db import clean_db
 from push_db import push_db
 
-#clean_db()
+clean_db()
 
 app = Flask(__name__)
 EAN_API_TOKEN="d016ac8894202cee4195ac5faa82037baa4a300e"
