@@ -16,13 +16,11 @@ def push_db(name, ean):
                 continue
 
             headers = values[0]
-            print("befor")
             try:
                 name_col = headers.index("Complément Alimentaire")
                 barcode_col = headers.index("Barcode")
             except ValueError:
                 continue  # Required columns not found
-            print("before the other for")
             for idx, row in enumerate(values[1:], start=2):  # gspread is 1-indexed
                 if name_col >= len(row):
                     continue
@@ -32,7 +30,7 @@ def push_db(name, ean):
                 if row_name in name:
                     current_barcode = row[barcode_col] if barcode_col < len(row) else ""
                     if not current_barcode.strip():
-                        ws.update_cell(idx, barcode_col + 1, ean)
+                        ws.update_cell(idx, barcode_col + 1, ean + "," + name)
                         print(f"[📤] Google Sheet mis à jour : {name} dans '{ws.title}' (ligne {idx})")
 
     except Exception as e:

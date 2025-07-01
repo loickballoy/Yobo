@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from "react-native";
 import axios from "axios";
 
-const API_BASE = "http://192.168.1.60:5001";
+const API_BASE = "https://muka-lept.onrender.com"; // "http://192.168.1.60:5001";
 
 const RechercheScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
