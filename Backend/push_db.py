@@ -30,8 +30,14 @@ def push_db(name, ean):
 
                 if row_name in name:
                     current_barcode = row[barcode_col] if barcode_col < len(row) else ""
-                    if not current_barcode.strip():
-                        new_value = current_barcode.strip() + ("n" if current_barcode.strip() else "") + f"{ean},{name}"
+                    barcode_lines = current_barcode.strip().split("\n") if current_barcode.strip() else []
+
+                    already_present = any(ean in line for line in barcode_lines)
+                    print("current_barcode")
+
+                    if not already_present:
+                        new_line = f"{ean},{name}"
+                        new_value = current_barcode.strip() + ("\n" if current_barcode.strip() else "") + new_line
                         print("new value")
                         ws.update_cell(idx, barcode_col + 1, new_value)
                         print(f"[📤] Google Sheet mis à jour : {name} dans '{ws.title}' (ligne {idx})")
