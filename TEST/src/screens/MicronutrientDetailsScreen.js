@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-nat
 import { useRoute, useNavigation } from "@react-navigation/native";
 import axios from "axios";
 
-const API_BASE = "http://192.168.1.60:5001";
+const API_BASE = "https://muka-lept.onrender.com"; //"http://192.168.1.60:5001";
 
 const MicronutrientDetailsScreen = () => {
   const route = useRoute();

@@ -6,7 +6,7 @@ import axios from "axios";
 import { Ionicons } from "@expo/vector-icons";
 import {useRoute, useNavigation} from "@react-navigation/native"
 
-const API_BASE = "http://192.168.1.60:5001";
+const API_BASE = "https://muka-lept.onrender.com"; //"http://192.168.1.60:5001";
 
 const ScanScreen = () => {
   const facing= useState<CameraType>('back');

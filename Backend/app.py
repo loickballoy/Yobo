@@ -161,8 +161,13 @@ def get_product(ean):
     
     #TODO WORK AGAIN
     result = next((entry for entry in micronutrient_data if entry.get("Barcode", "").strip() == ean), None)
-    print(result)
+    for entry in micronutrient_data:
+        print(len(entry.get("Barcode", "").strip().split(',')))
+        print(entry.get("Barcode", "").strip().split(','))
+        if len(entry.get("Barcode", "").strip().split(',')) > 1:
+            print(entry.get("Barcode", "").strip().split(',')[1])
 
+    print(result)
     if result:
         return jsonify({"name": result.get("Complément alimentaire")})
 
@@ -174,6 +179,7 @@ def get_product(ean):
     print(ean, " is ", product["name"].encode("utf-8"), " from category ", product["categoryName"], " issued in ", product["issuingCountry"])
 
     #TODO WORK AGAIN
+    print("here")
     update_barcode_in_sheet(product["name"], ean)
 
     #TODO display
