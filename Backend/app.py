@@ -7,6 +7,7 @@ import sqlite3
 import gspread
 from clean_db import clean_db
 from push_db import push_db
+import requests
 
 clean_db()
 
@@ -21,6 +22,10 @@ DATA_FILE = Path("Databases/micronutrients_clean.json")
 SHEET_ID = "1megV5iV3BObRDTqFp2Od-50Sedsv257jLnxziAA3dN0"  # <- remplace ça par l'ID de ton Google Sheet "1g_8ETAvX5H08vR7j2fCDwaVz_mK1IEh_3wFa8QrU1GE"
 SERVICE_ACCOUNT_FILE = "Databases/mukanew-4a4f2dd7432c.json"
 EXPORT_FILE = "Databases/micronutrients_clean.json"
+
+# === GOOGLE CONFIG ===
+GOOGLE_API_KEY = ' AIzaSyCJwr2EJnLi7xE_IDUs7p2mQAKgGD319eE '
+CX = 'd00c6b50a680d4683'
 
 try:
     with open(DATA_FILE, "r", encoding="utf-8") as f:
@@ -158,8 +163,34 @@ def get_interactions():
 #prefix=34009
 @app.route("/qrcode/<ean>", methods=["GET"])
 def get_product(ean):
-    
-    #TODO WORK AGAIN
+
+    #TODO get an image
+    img_url = ""
+    query = ean
+    endpoint = 'https://www.googleapis.com/customsearch/v1'
+    params = {
+        'key': GOOGLE_API_KEY,
+        'cx': CX,
+        'q': query,
+        'searchType': 'image'
+    }
+
+    try:
+        response = requests.get(endpoint, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        if 'items' in data and len(data['items']) > 0:
+            image_url = data['items'][0]['link']
+            print('Image found:', image_url)
+            img_url = image_url
+        else:
+            print('No image found for barcode:', ean)
+
+    except requests.RequestException as e:
+        print('Error fetching image:', e)
+
+    #img = "jpath-to-image"
     result = next((entry for entry in micronutrient_data if entry.get("Barcode", "").strip() == ean), None)
     for entry in micronutrient_data:
         #print(len(entry.get("Barcode", "").strip().split(',')))
@@ -169,7 +200,10 @@ def get_product(ean):
 
     print(result)
     if result:
-        return jsonify({"name": result.get("Complément alimentaire")})
+        jsonRes = jsonify({"name": result.get("Complément alimentaire")}) #=jsonified_result
+        jsonRes['image'] = img_url
+        print(json.dumps(jsonRes, indent=2))
+        return jsonRes
 
     lookup = EANSearch(EAN_API_TOKEN)
     name = lookup.barcodeLookup(ean)
@@ -189,6 +223,7 @@ def get_product(ean):
         "category": product.get("categoryName"),
         "country": product.get("issuingCountry"),
         "ean": ean,
+        "image": img_url
     })
 
 
