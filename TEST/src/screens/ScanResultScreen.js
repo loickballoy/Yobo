@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {View, Text, ActivityIndicator, StyleSheet, TouchableOpacity, ScrollView} from "react-native";
+import {View, Text, ActivityIndicator, StyleSheet, TouchableOpacity, ScrollView, Image} from "react-native";
 import axios from "axios";
 import { Ionicons } from "@expo/vector-icons";
 import {useRoute, useNavigation} from "@react-navigation/native"
