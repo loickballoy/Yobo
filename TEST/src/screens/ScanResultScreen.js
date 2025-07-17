@@ -127,9 +127,9 @@ const ScanResultScreen = () => {
       ?.split("\n")
       .filter(line => line.trim())
       .map((line, i) => (
-        <View key={i} style={styles.bulletContainer}>
+        <View key={"ei" + i} style={styles.bulletContainer}>
           <Text style={styles.bullet}>•</Text>
-          <Text style={styles.bulletText}>{line.trim().replace(/^- /, '')}</Text>
+        <Text style={styles.bulletText}>{line.trim().replace(/^[-–]\s*/, "")}</Text>
         </View>
       ))}
 
@@ -137,37 +137,27 @@ const ScanResultScreen = () => {
     <Text style={styles.sectionTitle}>Effets pour le Patient</Text>
     {/* Groupe Gravité Élevée */}
     <Text style={styles.sectionSubTitleR}>Gravité : Élevée</Text>
-     {item["Effet pour le Patient"]
-  ?.split("\n")
-  .map(line => line.trim())
-  .filter(line => /\[rouge\]/i.test(line))
-  .map((line, i) => {
-    const match = line.match(/\[rouge\]\s*(.*)/i);
-    if (!match) return null;
-    return (
-      <View key={"red" + i} style={styles.bulletContainer}>
-        <Text style={styles.bulletRed}>⚠️</Text>
-        <Text style={styles.bulletText}>{match[1].trim().replace(/^- /, '')}</Text>
-      </View>
-    );
-  })}
+     {(item["Effet pour le Patient"]?.match(/\[Rouge\]\s*(.*)/gi) || []).map((line, i) => {
+  const match = line.match(/\[Rouge\]\s*(.*)/i);
+  return match ? (
+    <View key={"rouge" + i} style={styles.bulletContainer}>
+      <Text style={styles.bulletRed}>⚠️</Text>
+      <Text style={styles.bulletText}>{match[1].trim().replace(/^- /, '')}</Text>
+    </View>
+  ) : null;
+})}
 
     {/* Groupe Gravité Modérée */}
     <Text style={styles.sectionSubTitleO}>Gravité : Modérée</Text>
-    {item["Effet pour le Patient"]
-  ?.split("\n")
-  .map(line => line.trim())
-  .filter(line => /\[orange\]/i.test(line))
-  .map((line, i) => {
-    const match = line.match(/\[orange\]\s*(.*)/i);
-    if (!match) return null;
-    return (
-      <View key={"orange" + i} style={styles.bulletContainer}>
-        <Text style={styles.bulletOrange}>❗</Text>
-        <Text style={styles.bulletText}>{match[1].trim().replace(/^- /, '')}</Text>
-      </View>
-    );
-  })}
+{(item["Effet pour le Patient"]?.match(/\[Orange\]\s*(.*)/gi) || []).map((line, i) => {
+  const match = line.match(/\[Orange\]\s*(.*)/i);
+  return match ? (
+    <View key={"orange" + i} style={styles.bulletContainer}>
+      <Text style={styles.bulletOrange}>❗</Text>
+      <Text style={styles.bulletText}>{match[1].trim().replace(/^- /, '')}</Text>
+    </View>
+  ) : null;
+})}
 
   </View>
 ))}
