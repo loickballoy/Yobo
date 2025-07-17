@@ -136,30 +136,39 @@ const ScanResultScreen = () => {
     {/* Effets pour le patient */}
     <Text style={styles.sectionTitle}>Effets pour le Patient</Text>
     {/* Groupe Gravité Élevée */}
-    {item["Effet pour le Patient"]
-      ?.split("\n")
-      .filter(line => line.includes("[Rouge]"))
-      .map((line, i) => (
-        <View key={"red" + i} style={styles.bulletContainer}>
-          <Text style={styles.bulletRed}>⚠️</Text>
-          <Text style={styles.bulletText}>
-            {line.replace(/\[Rouge\]\s*/i, '').trim()}
-          </Text>
-        </View>
-      ))}
+    <Text style={styles.sectionSubTitleR}>Gravité : Élevée</Text>
+     {item["Effet pour le Patient"]
+  ?.split("\n")
+  .map(line => line.trim())
+  .filter(line => /\[rouge\]/i.test(line))
+  .map((line, i) => {
+    const match = line.match(/\[rouge\]\s*(.*)/i);
+    if (!match) return null;
+    return (
+      <View key={"red" + i} style={styles.bulletContainer}>
+        <Text style={styles.bulletRed}>⚠️</Text>
+        <Text style={styles.bulletText}>{match[1].trim().replace(/^- /, '')}</Text>
+      </View>
+    );
+  })}
 
     {/* Groupe Gravité Modérée */}
+    <Text style={styles.sectionSubTitleO}>Gravité : Modérée</Text>
     {item["Effet pour le Patient"]
-      ?.split("\n")
-      .filter(line => line.includes("[Orange]"))
-      .map((line, i) => (
-        <View key={"orange" + i} style={styles.bulletContainer}>
-          <Text style={styles.bulletOrange}>❗</Text>
-          <Text style={styles.bulletText}>
-            {line.replace(/\[Orange\]\s*/i, '').trim()}
-          </Text>
-        </View>
-      ))}
+  ?.split("\n")
+  .map(line => line.trim())
+  .filter(line => /\[orange\]/i.test(line))
+  .map((line, i) => {
+    const match = line.match(/\[orange\]\s*(.*)/i);
+    if (!match) return null;
+    return (
+      <View key={"orange" + i} style={styles.bulletContainer}>
+        <Text style={styles.bulletOrange}>❗</Text>
+        <Text style={styles.bulletText}>{match[1].trim().replace(/^- /, '')}</Text>
+      </View>
+    );
+  })}
+
   </View>
 ))}
         </ScrollView>
@@ -201,7 +210,7 @@ sectionTitle: {
   fontWeight: "600",
   marginTop: 16,
   marginBottom: 8,
-  color: "#AD0000"
+  color: "#000000"
 },
 bulletContainer: {
   flexDirection: "row",
@@ -227,6 +236,20 @@ bulletText: {
   flex: 1,
   fontSize: 15,
   color: "#001F54",
+},
+sectionSubTitleR:{
+fontSize: 16,
+  fontWeight: "600",
+  marginTop: 12,
+  marginBottom: 4,
+  color: "#AD0000",
+},
+sectionSubTitleO:{
+fontSize: 16,
+  fontWeight: "600",
+  marginTop: 12,
+  marginBottom: 4,
+  color: "#FFA500",
 },
 });
 
