@@ -102,19 +102,64 @@ const ScanResultScreen = () => {
         <Text style={styles.message}>😕 Aucun complément trouvé pour ce code-barres.</Text>
       ) : (
         <ScrollView contentContainerStyle={styles.scroll}>
-          {imageUrl && (
-            <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="contain" />
-          )}
           {data.map((item, idx) => (
   <View key={idx} style={styles.card}>
-    {Object.entries(item).map(([key, value]) => (
-      value?.trim() ? (
-        <Text key={key} style={styles.section}>
-          <Text style={styles.label}>{key.replace(/_/g, " ")}:</Text>{" "}
-          {renderFormattedText(value)}
-        </Text>
-      ) : null
-    ))}
+
+    {/* Titre du complément */}
+    <Text style={styles.complementTitle}>{item["Complément Alimentaire"]}</Text>
+
+    {/* Indications + Dose */}
+    <Text style={styles.section}>
+      <Text style={styles.label}>Indications :</Text> {item["Indications"]}
+    </Text>
+    <Text style={styles.section}>
+      <Text style={styles.label}>Dose Recommandée :</Text> {item["Dose Quotidienne Recommandée"]}
+    </Text>
+
+    {/* Image */}
+    {imageUrl && (
+      <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="contain" />
+    )}
+
+    {/* Effets indésirables / contre-indications */}
+    <Text style={styles.sectionTitle}>Effets Indésirables / Contre-Indications</Text>
+    {item["Effets Indésirables/Contre-Indications"]
+      ?.split("\n")
+      .filter(line => line.trim())
+      .map((line, i) => (
+        <View key={i} style={styles.bulletContainer}>
+          <Text style={styles.bullet}>•</Text>
+          <Text style={styles.bulletText}>{line.trim().replace(/^- /, '')}</Text>
+        </View>
+      ))}
+
+    {/* Effets pour le patient */}
+    <Text style={styles.sectionTitle}>Effets pour le Patient</Text>
+    {/* Groupe Gravité Élevée */}
+    {item["Effet pour le Patient"]
+      ?.split("\n")
+      .filter(line => line.includes("[Rouge]"))
+      .map((line, i) => (
+        <View key={"red" + i} style={styles.bulletContainer}>
+          <Text style={styles.bulletRed}>⚠️</Text>
+          <Text style={styles.bulletText}>
+            {line.replace(/\[Rouge\]\s*/i, '').trim()}
+          </Text>
+        </View>
+      ))}
+
+    {/* Groupe Gravité Modérée */}
+    {item["Effet pour le Patient"]
+      ?.split("\n")
+      .filter(line => line.includes("[Orange]"))
+      .map((line, i) => (
+        <View key={"orange" + i} style={styles.bulletContainer}>
+          <Text style={styles.bulletOrange}>❗</Text>
+          <Text style={styles.bulletText}>
+            {line.replace(/\[Orange\]\s*/i, '').trim()}
+          </Text>
+        </View>
+      ))}
   </View>
 ))}
         </ScrollView>
@@ -143,6 +188,46 @@ const styles = StyleSheet.create({
   },
   section: { fontSize: 16, marginBottom: 6, color: "#001F54" },
   label: { fontWeight: "bold", color: "#003B73" },
+
+  complementTitle: {
+  fontSize: 22,
+  fontWeight: "bold",
+  color: "#003B73",
+  marginBottom: 10,
+  textAlign: "center"
+},
+sectionTitle: {
+  fontSize: 18,
+  fontWeight: "600",
+  marginTop: 16,
+  marginBottom: 8,
+  color: "#AD0000"
+},
+bulletContainer: {
+  flexDirection: "row",
+  alignItems: "flex-start",
+  marginBottom: 6,
+},
+bullet: {
+  marginRight: 6,
+  fontSize: 16,
+  color: "#003B73",
+},
+bulletRed: {
+  marginRight: 6,
+  fontSize: 16,
+  color: "red",
+},
+bulletOrange: {
+  marginRight: 6,
+  fontSize: 16,
+  color: "#FFA500",
+},
+bulletText: {
+  flex: 1,
+  fontSize: 15,
+  color: "#001F54",
+},
 });
 
 export default ScanResultScreen;
