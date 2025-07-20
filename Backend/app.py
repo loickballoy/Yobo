@@ -8,6 +8,7 @@ import gspread
 from clean_db import clean_db
 from push_db import push_db
 import requests
+import unicodedata
 
 clean_db()
 
@@ -134,11 +135,18 @@ def get_complement_details(pathologie ,nom):
             results.append(entry)
     return jsonify(results)
 
+def strip_accents(text):
+    return ''.join(
+        c for c in unicodedata.normalize('NFD', text)
+        if unicodedata.category(c) != 'Mn'
+    ).lower()
+
 @app.route("/complement/<nom>", methods=["GET"])
 def get_complements(nom):
     results = []
+    nom_normalized = strip_accents(nom)
     for entry in micronutrient_data:
-        comp = entry.get("Complément Alimentaire", "").lower()
+        comp = strip_accents(entry.get("Complément Alimentaire", "").lower())
         if comp in nom.lower():
             results.append(entry)
     return jsonify(results)
@@ -209,7 +217,7 @@ def get_product(ean):
     name = lookup.barcodeLookup(ean)
     print(name) #Name of the product
 
-    product = lookup.barcodeSearch(ean)
+    product = lookup.barcodeSearch(ean, lang=6)
     print(ean, " is ", product["name"].encode("utf-8"), " from category ", product["categoryName"], " issued in ", product["issuingCountry"])
 
     #TODO WORK AGAIN
@@ -228,4 +236,6 @@ def get_product(ean):
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0',port=5000,debug=True)
+    import os
+    port = int(os.environ.get("PORT", 5000))  # Use PORT provided by Render
+    app.run(host='0.0.0.0', port=port, debug=True)
