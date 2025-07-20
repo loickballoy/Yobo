@@ -144,9 +144,9 @@ def strip_accents(text):
 @app.route("/complement/<nom>", methods=["GET"])
 def get_complements(nom):
     results = []
-    nom_normalized = strip_accents(nom)
+    nom_normalized = nom
     for entry in micronutrient_data:
-        comp = strip_accents(entry.get("Complément Alimentaire", "").lower())
+        comp = entry.get("Complément Alimentaire", "").lower()
         if comp in nom.lower():
             results.append(entry)
     return jsonify(results)
