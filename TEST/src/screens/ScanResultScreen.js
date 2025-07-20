@@ -17,37 +17,50 @@ const ScanResultScreen = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchComplement = async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/qrcode/${ean}`);
-        const name = res.data.name;
-        const image = res.data.image;
+  const fetchComplement = async () => {
+    try {
+      const now = new Date().toLocaleString();
+      console.log(`[${now}] 🛰️ Début fetch pour EAN: ${ean}`);
 
-        if (!name) {
-          setNotFound(true);
-          return;
-        }
+      const res = await axios.get(`${API_BASE}/qrcode/${ean}`);
+      const name = res.data.name;
+      const image = res.data.image;
 
-        const compRes = await axios.get(`${API_BASE}/complement/${encodeURIComponent(name)}`);
-        const results = compRes.data;
+      console.log(`[${now}] 📦 Résultat QR code:`, res.data);
 
-        if (results.length > 0) {
-          setData(results);
-          setImageUrl(image || null);
-          setNotFound(false);
-        } else {
-          setNotFound(true);
-        }
-      } catch (err) {
-        console.error("Scan error", err);
+      if (!name) {
         setNotFound(true);
-      } finally {
-        setLoading(false);
+        return;
       }
-    };
 
-    fetchComplement();
-  }, [ean]);
+      const compRes = await axios.get(`${API_BASE}/complement/${encodeURIComponent(name)}`);
+      const results = compRes.data;
+
+      console.log(`[${now}] 📊 Résultat complement pour "${name}":`, results);
+
+      if (results.length > 0) {
+        const first = results[0];
+        console.log(`[${now}] ✅ Champs utiles :`);
+        console.log(" - Effets Indésirables/Contre-Indications:", first["Effets Indésirables/Contre-Indications"]);
+        console.log(" - Effet pour le Patient:", first["Effet pour le Patient"]);
+        
+        setData(results);
+        setImageUrl(image || null);
+        setNotFound(false);
+      } else {
+        setNotFound(true);
+      }
+    } catch (err) {
+      const now = new Date().toLocaleString();
+      console.error(`[${now}] ❌ Erreur lors du scan`, err);
+      setNotFound(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchComplement();
+}, [ean]);
 
   const renderFormattedText = (value) => {
   if (!value) return null;
@@ -103,6 +116,7 @@ const ScanResultScreen = () => {
       ) : (
         <ScrollView contentContainerStyle={styles.scroll}>
           {data.map((item, idx) => (
+            
   <View key={idx} style={styles.card}>
 
     {/* Titre du complément */}
@@ -111,9 +125,6 @@ const ScanResultScreen = () => {
     {/* Indications + Dose */}
     <Text style={styles.section}>
       <Text style={styles.label}>Indications :</Text> {item["Indications"]}
-    </Text>
-    <Text style={styles.section}>
-      <Text style={styles.label}>Dose Recommandée :</Text> {item["Dose Quotidienne Recommandée"]}
     </Text>
 
     {/* Image */}
