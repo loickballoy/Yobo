@@ -15,6 +15,7 @@ const ScanResultScreen = () => {
   const [imageUrl, setImageUrl] = useState(null);
   const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [scannedName, setScannedName] = useState("");
 
   useEffect(() => {
   const fetchComplement = async () => {
@@ -34,6 +35,7 @@ const ScanResultScreen = () => {
       }
 
       const compRes = await axios.get(`${API_BASE}/complement/${encodeURIComponent(name)}`);
+      compRes.data.name = name;
       const results = compRes.data;
 
       console.log(`[${now}] 📊 Résultat complement pour "${name}":`, results);
@@ -42,11 +44,12 @@ const ScanResultScreen = () => {
         const first = results[0];
         console.log(`[${now}] ✅ Champs utiles :`);
         console.log(" - Effets Indésirables/Contre-Indications:", first["Effets Indésirables/Contre-Indications"]);
-        console.log(" - Effet pour le Patient:", first["Effet pour le Patient"]);
+        console.log(" - Effet pour le Patient:", first["Effet pour le patient"]);
         
         setData(results);
         setImageUrl(image || null);
         setNotFound(false);
+        setScannedName(name)
       } else {
         setNotFound(true);
       }
@@ -115,63 +118,108 @@ const ScanResultScreen = () => {
         <Text style={styles.message}>😕 Aucun complément trouvé pour ce code-barres.</Text>
       ) : (
         <ScrollView contentContainerStyle={styles.scroll}>
-          {data.map((item, idx) => (
-            
-  <View key={idx} style={styles.card}>
+          {data.slice(0,1).map((item, idx) => {
+            const effet = item["Effet pour le patient"] || item["Effet pour patient"] || "";
+            const lignes = effet.split(/\r?\n/);
 
-    {/* Titre du complément */}
-    <Text style={styles.complementTitle}>{item["Complément Alimentaire"]}</Text>
+            const rouges = lignes
+              .filter(l => /\[\s*rouge\s*]/i.test(l))
+              .map(l => l.replace(/.*\[\s*rouge\s*]\s*/i, '').trim());
 
-    {/* Indications + Dose */}
-    <Text style={styles.section}>
-      <Text style={styles.label}>Indications :</Text> {item["Indications"]}
-    </Text>
+            const oranges = lignes
+              .filter(l => /\[\s*orange\s*]/i.test(l))
+              .map(l => l.replace(/.*\[\s*orange\s*]\s*/i, '').trim());
 
-    {/* Image */}
-    {imageUrl && (
-      <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="contain" />
-    )}
+            const verts = lignes
+              .filter(l => /\[\s*vert\s*]/i.test(l))
+              .map(l => l.replace(/.*\[\s*vert\s*]\s*/i, '').trim());
 
-    {/* Effets indésirables / contre-indications */}
-    <Text style={styles.sectionTitle}>Effets Indésirables / Contre-Indications</Text>
-    {item["Effets Indésirables/Contre-Indications"]
-      ?.split("\n")
-      .filter(line => line.trim())
-      .map((line, i) => (
-        <View key={"ei" + i} style={styles.bulletContainer}>
-          <Text style={styles.bullet}>•</Text>
-        <Text style={styles.bulletText}>{line.trim().replace(/^[-–]\s*/, "")}</Text>
-        </View>
-      ))}
+            const bleus = lignes
+              .filter(l => /\[\s*bleu\s*]/i.test(l))
+              .map(l => l.replace(/.*\[\s*bleu\s*]\s*/i, '').trim());
 
-    {/* Effets pour le patient */}
-    <Text style={styles.sectionTitle}>Effets pour le Patient</Text>
-    {/* Groupe Gravité Élevée */}
-    <Text style={styles.sectionSubTitleR}>Gravité : Élevée</Text>
-     {(item["Effet pour le Patient"]?.match(/\[Rouge\]\s*(.*)/gi) || []).map((line, i) => {
-  const match = line.match(/\[Rouge\]\s*(.*)/i);
-  return match ? (
-    <View key={"rouge" + i} style={styles.bulletContainer}>
-      <Text style={styles.bulletRed}>⚠️</Text>
-      <Text style={styles.bulletText}>{match[1].trim().replace(/^- /, '')}</Text>
-    </View>
-  ) : null;
-})}
+            const BulletCircle = ({ color, showExclamation }) => (
+                <View style={[styles.bulletCircle, { backgroundColor: color }]}>
+                  {showExclamation && <Text style={styles.exclamation}>!</Text>}
+                </View>
+              );
 
-    {/* Groupe Gravité Modérée */}
-    <Text style={styles.sectionSubTitleO}>Gravité : Modérée</Text>
-{(item["Effet pour le Patient"]?.match(/\[Orange\]\s*(.*)/gi) || []).map((line, i) => {
-  const match = line.match(/\[Orange\]\s*(.*)/i);
-  return match ? (
-    <View key={"orange" + i} style={styles.bulletContainer}>
-      <Text style={styles.bulletOrange}>❗</Text>
-      <Text style={styles.bulletText}>{match[1].trim().replace(/^- /, '')}</Text>
-    </View>
-  ) : null;
-})}
+            console.log("\n✅ Groupe d'effets extraits :", {
+              rouges,
+              oranges,
+              bleus,
+              verts
+            });
 
-  </View>
-))}
+            return (
+              <View key={idx} style={styles.card}>
+
+                  {/* Titre du complément */}
+                  <Text style={styles.complementTitle}>{scannedName}</Text>
+
+                  {/* Image */}
+                  {imageUrl && (
+                    <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="contain" />
+                  )}
+
+                  {/* Compteur de risques détectés */}
+                  <View style={styles.riskSummaryContainer}>
+                    <View style={styles.riskBullet} />
+                    <Text style={styles.riskText}>
+                      {rouges.length + oranges.length + bleus.length + verts.length} Intéraction(s) détecté(s)
+                    </Text>
+                  </View>
+                  
+                  {rouges.length > 0 && (
+                    <>
+                      <Text style={styles.sectionSubTitleR}>Dangers élevés à connaître</Text>
+                      {rouges.map((text, i) => (
+                        <View key={"rouge" + i} style={styles.bulletContainer}>
+                          <BulletCircle color="red" showExclamation={false} />
+                          <Text style={styles.bulletText}>{text}</Text>
+                        </View>
+                      ))}
+                    </>
+                  )}
+
+                  {oranges.length > 0 && (
+                    <>
+                      <Text style={styles.sectionSubTitleO}>Risques modérés à surveiller</Text>
+                      {oranges.map((text, i) => (
+                        <View key={"orange" + i} style={styles.bulletContainer}>
+                           <BulletCircle color="#FFA500" showExclamation={false} />
+                          <Text style={styles.bulletText}>{text}</Text>
+                        </View>
+                      ))}
+                    </>
+                  )}
+
+                  {bleus.length > 0 && (
+                    <>
+                      <Text style={styles.sectionSubTitleB}>Risques potentiel mais faible</Text>
+                      {bleus.map((text, i) => (
+                        <View key={"bleu" + i} style={styles.bulletContainer}>
+                          <BulletCircle color="#0077CC" showExclamation={false} />
+                          <Text style={styles.bulletText}>{text}</Text>
+                        </View>
+                      ))}
+                    </>
+                  )}
+
+                  {verts.length > 0 && (
+                    <>
+                      <Text style={styles.sectionSubTitleV}>Effets bénins ou rares</Text>
+                      {verts.map((text, i) => (
+                        <View key={"vert" + i} style={styles.bulletContainer}>
+                          <BulletCircle color="#2E8B57" showExclamation={false} />
+                          <Text style={styles.bulletText}>{text}</Text>
+                        </View>
+                      ))}
+                    </>
+                  )}
+              </View>
+            );
+          })}
         </ScrollView>
       )}
     </View>
@@ -204,7 +252,7 @@ const styles = StyleSheet.create({
   fontWeight: "bold",
   color: "#003B73",
   marginBottom: 10,
-  textAlign: "center"
+  textAlign: "left"
 },
 sectionTitle: {
   fontSize: 18,
@@ -215,7 +263,7 @@ sectionTitle: {
 },
 bulletContainer: {
   flexDirection: "row",
-  alignItems: "flex-start",
+  alignItems: "center",
   marginBottom: 6,
 },
 bullet: {
@@ -237,6 +285,7 @@ bulletText: {
   flex: 1,
   fontSize: 15,
   color: "#001F54",
+  lineHeight: 20,
 },
 sectionSubTitleR:{
 fontSize: 16,
@@ -251,6 +300,62 @@ fontSize: 16,
   marginTop: 12,
   marginBottom: 4,
   color: "#FFA500",
+},
+sectionSubTitleB: {
+  fontSize: 16,
+  fontWeight: "600",
+  marginTop: 12,
+  marginBottom: 4,
+  color: "#0077CC", // Bleu
+},
+sectionSubTitleV: {
+  fontSize: 16,
+  fontWeight: "600",
+  marginTop: 12,
+  marginBottom: 4,
+  color: "#2E8B57", // Vert
+},
+bulletBlue: {
+  marginRight: 6,
+  fontSize: 16,
+  color: "#0077CC",
+},
+bulletGreen: {
+  marginRight: 6,
+  fontSize: 16,
+  color: "#2E8B57",
+},
+bulletCircle: {
+  width: 18,
+  height: 18,
+  borderRadius: 9,
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginRight: 8,
+},
+exclamation: {
+  color: 'white',
+  fontSize: 12,
+  fontWeight: 'bold',
+},
+riskSummaryContainer: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginBottom: 12,
+},
+
+riskBullet: {
+  width: 14,
+  height: 14,
+  borderRadius: 7,
+  backgroundColor: "#2E8B57", // Orange
+  marginRight: 8,
+},
+
+riskText: {
+  fontSize: 16,
+  fontWeight: "500",
+  color: "#2E8B57",
 },
 });
 
