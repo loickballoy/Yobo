@@ -167,6 +167,24 @@ def get_interactions():
 
     return jsonify(results)
 
+@app.route("/scanned", methods=["GET"])
+def get_scanned_products():
+    scanned = []
+
+    for entry in micronutrient_data:
+        barcode_raw = entry.get("Barcode", "").strip()
+        if "," in barcode_raw:
+            parts = barcode_raw.split(",")
+            barcode = parts[0].strip()
+            name = parts[1].strip()
+            if barcode and name:
+                scanned.append({
+                    "barcode": barcode,
+                    "name": name
+                })
+    print(scanned)
+    return jsonify(scanned)
+
 ##EAN
 #prefix=34009
 @app.route("/qrcode/<ean>", methods=["GET"])
