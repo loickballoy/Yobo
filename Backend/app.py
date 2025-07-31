@@ -172,16 +172,18 @@ def get_scanned_products():
     scanned = []
 
     for entry in micronutrient_data:
-        barcode_raw = entry.get("Barcode", "").strip()
-        if "," in barcode_raw:
-            parts = barcode_raw.split(",")
-            barcode = parts[0].strip()
-            name = parts[1].strip()
-            if barcode and name:
-                scanned.append({
-                    "barcode": barcode,
-                    "name": name
-                })
+        barcode_raw = entry.get("Barcode", "")
+        lines = barcode_raw.strip().split("\n")
+        for line in lines:
+            parts = line.strip().split(",")
+            if len(parts) == 2:
+                barcode = parts[0].strip()
+                name = parts[1].strip()
+                if barcode and name:
+                    scanned.append({
+                        "barcode": barcode,
+                        "name": name
+                    })
     print(scanned)
     return jsonify(scanned)
 

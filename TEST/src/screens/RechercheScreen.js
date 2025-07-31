@@ -1,63 +1,73 @@
 // RechercheScreen.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from "react-native";
 import axios from "axios";
+import { useNavigation } from "@react-navigation/native";
 
 const API_BASE = "https://muka-lept.onrender.com"; // "http://192.168.1.60:5001";
 
 const RechercheScreen = () => {
+  const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState("");
-  const [result, setResult] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-    setLoading(true);
-    try {
-      const res = await axios.get(`${API_BASE}/complement/${encodeURIComponent(searchQuery.trim())}`);
-      setResult(res.data);
-    } catch (err) {
-      console.error("Erreur recherche complément:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    axios.get(`${API_BASE}/scanned`)
+      .then(res => {
+        setProducts(res.data);
+        setFilteredProducts(res.data);
+      })
+      .catch(err => {
+        console.error("Erreur chargement des produits scannés:", err);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
-  const getRiskColor = (text) => {
-    if (!text) return "#003B73";
-    const t = text.toLowerCase();
-    if (t.includes("éviter") || t.includes("danger") || t.includes("toxique")) return "#B00020"; // red
-    if (t.includes("prudence") || t.includes("surveiller") || t.includes("interagir")) return "#E65100"; // orange
-    return "#003B73"; // default
+  useEffect(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) {
+      setFilteredProducts(products);
+    } else {
+      const results = products.filter(p =>
+        p.name.toLowerCase().includes(query)
+      );
+      setFilteredProducts(results);
+    }
+  }, [searchQuery, products]);
+
+  const handlePress = (barcode) => {
+    navigation.navigate("ScanResult", { ean: barcode });
   };
 
   return (
     <View style={styles.container}>
       <TextInput
         style={styles.searchBar}
-        placeholder="Rechercher un complément"
+        placeholder="Rechercher un produit"
         placeholderTextColor="#89CFF0"
         value={searchQuery}
         onChangeText={setSearchQuery}
-        onSubmitEditing={handleSearch}
       />
 
       {loading ? (
         <ActivityIndicator size="large" color="#003B73" />
       ) : (
-        <ScrollView style={styles.resultsContainer}>
-          {result && result.map((item, idx) => (
-            <View key={idx} style={styles.resultCard}>
-              <Text style={styles.title}>{item.Complement_Alimentaire}</Text>
-
-              {item.Interactions_Pro && (
-                <Text style={[styles.section, { color: getRiskColor(item.Interactions_Pro) }]}>💊 Pro : {item.Interactions_Pro}</Text>
-              )}
-              {item.Interactions_Patient && (
-                <Text style={[styles.section, { color: getRiskColor(item.Interactions_Patient) }]}>🧑‍⚕️ Patient : {item.Interactions_Patient}</Text>
-              )}
-            </View>
+        <ScrollView style={styles.resultList}>
+          {filteredProducts.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.resultItem}
+              onPress={() => handlePress(item.barcode)}
+            >
+              <Text style={styles.resultText}>{item.name}</Text>
+              <Text style={styles.barcodeText}>EAN : {item.barcode}</Text>
+            </TouchableOpacity>
           ))}
+          {filteredProducts.length === 0 && (
+            <Text style={styles.empty}>Aucun résultat trouvé</Text>
+          )}
         </ScrollView>
       )}
     </View>
@@ -65,27 +75,39 @@ const RechercheScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#FAFAF5", marginTop: 40,},
+  container: { flex: 1, paddingTop: 60, paddingHorizontal: 20, backgroundColor: "#FAFAF5",},
   searchBar: {
     height: 40,
     borderColor: "#003B73",
     borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
+    borderRadius: 8,
+    paddingHorizontal: 16,
     color: "#003B73",
-    marginBottom: 10,
+    marginBottom: 20,
   },
-  resultsContainer: { marginTop: 10 },
-  resultCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#C8D8E4",
-    borderWidth: 1,
+  resultList: { marginTop: 10 },
+  resultItem: {
+    backgroundColor: "#E0F7FA",
     borderRadius: 8,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  title: { fontSize: 20, color: "#003B73", fontWeight: "bold", marginBottom: 12 },
-  section: { fontSize: 16, marginBottom: 10 },
+  resultText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#003B73",
+  },
+    barcodeText: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 4,
+  },
+  empty: {
+    marginTop: 40,
+    textAlign: "center",
+    fontSize: 16,
+    color: "#888",
+  },
 });
 
 export default RechercheScreen;
