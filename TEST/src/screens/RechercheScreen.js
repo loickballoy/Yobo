@@ -1,6 +1,7 @@
 // RechercheScreen.js
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 
@@ -17,7 +18,7 @@ const RechercheScreen = () => {
     axios.get(`${API_BASE}/scanned`)
       .then(res => {
         setProducts(res.data);
-        setFilteredProducts(res.data);
+        //setFilteredProducts(res.data);
       })
       .catch(err => {
         console.error("Erreur chargement des produits scannés:", err);
@@ -28,7 +29,7 @@ const RechercheScreen = () => {
   useEffect(() => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) {
-      setFilteredProducts(products);
+      setFilteredProducts([]);
     } else {
       const results = products.filter(p =>
         p.name.toLowerCase().includes(query)
@@ -38,21 +39,37 @@ const RechercheScreen = () => {
   }, [searchQuery, products]);
 
   const handlePress = (barcode) => {
-    navigation.navigate("ScanResult", { ean: barcode });
+    navigation.navigate("ScanResultScreen", { ean: barcode });
   };
+
+  const handleClear = () => {
+    setSearchQuery("");
+  };
+
 
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.searchBar}
-        placeholder="Rechercher un produit"
-        placeholderTextColor="#89CFF0"
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-      />
+      <View style={styles.searchWrapper}>
+        <TextInput
+          style={styles.searchBar}
+          placeholder="Rechercher un produit"
+          placeholderTextColor="#89CFF0"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
+            <Ionicons name="close-circle" size={22} color="#003B73" />
+          </TouchableOpacity>
+        )}
+      </View>
 
       {loading ? (
         <ActivityIndicator size="large" color="#003B73" />
+      ) : searchQuery.length === 0 ? (
+        <View style={styles.messageContainer}>
+          <Text style={styles.message}>🔍 Commencez à chercher vos produits !</Text>
+        </View>
       ) : (
         <ScrollView style={styles.resultList}>
           {filteredProducts.map((item, index) => (
@@ -62,7 +79,6 @@ const RechercheScreen = () => {
               onPress={() => handlePress(item.barcode)}
             >
               <Text style={styles.resultText}>{item.name}</Text>
-              <Text style={styles.barcodeText}>EAN : {item.barcode}</Text>
             </TouchableOpacity>
           ))}
           {filteredProducts.length === 0 && (
@@ -76,6 +92,11 @@ const RechercheScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: 60, paddingHorizontal: 20, backgroundColor: "#FAFAF5",},
+  searchWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    //position: "relative",
+  },
   searchBar: {
     height: 40,
     borderColor: "#003B73",
@@ -84,6 +105,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     color: "#003B73",
     marginBottom: 20,
+  },
+  clearButton: {
+    position: "absolute",
+    right: 10,
+    top: 13,
   },
   resultList: { marginTop: 10 },
   resultItem: {
@@ -107,6 +133,17 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     color: "#888",
+  },
+  messageContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 60,
+  },
+  message: {
+    fontSize: 18,
+    color: "#003B73",
+    fontWeight: "500",
   },
 });
 
