@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Dimensions } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
+import {Ionicons} from "@expo/vector-icons";
 import axios from "axios";
 
 const { width, height } = Dimensions.get("window");
@@ -13,6 +14,7 @@ const MicronutrientDetailsScreen = () => {
   const { name, pathology } = route.params;
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
 
   useEffect(() => {
     axios.get(`${API_BASE}/complement/${encodeURIComponent(pathology)}/${encodeURIComponent(name)}`)
@@ -38,27 +40,46 @@ const MicronutrientDetailsScreen = () => {
     });
   }, [navigation]);
 
+  const handleMomentumScrollEnd = (event) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / width);
+    setCurrentPage(index);
+  };
+
   const BulletCircle = ({ color }) => (
     <View style={[styles.bulletCircle, { backgroundColor: color }]}/>
   ); 
 
+  const BulletBlue = ({ text }) => (
+    <View style={styles.bulletContainer}>
+      <View style={[styles.bulletCircle, { backgroundColor: "#0077CC" }]} />
+      <Text style={styles.label}>{text}</Text>
+    </View>
+  );
+
+    const BulletLine = ({ text, color }) => (
+    <View style={styles.bulletContainer}>
+      <View style={[styles.bulletCircle, { backgroundColor: "#0077CC" }]} />
+      <Text style={styles.label}>{text}</Text>
+    </View>
+  );
+
   const renderCardOne = (item) => (
     <ScrollView contentContainerStyle={styles.cardScroll}>
       <View style={styles.card}>
-        <Text style={styles.title}>{pathology}</Text>
-        <Text style={styles.subtitle}>{name}</Text>
-        {item["Dose quotidienne Recommandée"] ? <Text style={styles.label}>Dosage: {item["Dose quotidienne Recommandée"]}</Text> : null}
-        {item["Dose Quotidienne Recommandée"] ? <Text style={styles.label}>Dosage: {item["Dose Quotidienne Recommandée"]}</Text> : null}
-        {item["Indications"] ? (
-          <Text style={styles.label}>Indications: {item["Indications"]}</Text>
-        ) : null}
+        <Text style={styles.title}>{name}</Text>
+        <Text style={styles.sectionTitle}>Dosage</Text>
+        {item["Dose quotidienne Recommandée"] && <BulletBlue text={item["Dose quotidienne Recommandée"]} />}
+        {item["Dose Quotidienne Recommandée"] && <BulletBlue text={item["Dose Quotidienne Recommandée"]} />}
+        <Text style={styles.sectionTitle}>Indications</Text>
+        {item["Indications"] && <BulletBlue text={item["Indications"]} />}
       </View>
     </ScrollView>
   );
 
 
    const renderCardTwo = (item) => {
-    const effet = item["Effet pour le patient"] || item["Effets pour le patient"] || "";
+    const effet = item["Effet pour le patient"] || item["Effets pour le patient"] || item["Effet pour le Patient"] || "";
     const lignes = effet.split(/\r?\n/);
 
     const rouges = lignes.filter(l => /\[\s*rouge\s*]/i.test(l)).map(l => l.replace(/.*\[\s*rouge\s*]\s*/i, '').trim());
@@ -66,16 +87,22 @@ const MicronutrientDetailsScreen = () => {
     const bleus = lignes.filter(l => /\[\s*bleu\s*]/i.test(l)).map(l => l.replace(/.*\[\s*bleu\s*]\s*/i, '').trim());
     const verts = lignes.filter(l => /\[\s*vert\s*]/i.test(l)).map(l => l.replace(/.*\[\s*vert\s*]\s*/i, '').trim());
 
+    const effetsIndesirables = item["Effets Indésirables/Contre-Indications"] || "";
+    const lignesIndesirables = effetsIndesirables.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+
     return (
       <ScrollView contentContainerStyle={styles.cardScroll}>
         <View style={styles.card}>
-          {item["Effets Indésirables/Contre-Indications"] ? (
+          {lignesIndesirables.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Dangers élevés à connaître</Text>
-              <Text style={styles.label}>{item["Effets Indésirables/Contre-Indications"]}</Text>
-              <Text style={styles.sectionTitle}>Interractions</Text>
+              <Text style={styles.sectionTitle}>Effets Indésirables et Contre-Indications</Text>
+              {lignesIndesirables.map((line, i) => (
+                <BulletLine key={`ind-${i}`} text={line} color="red" />
+              ))}
+              <Text style={styles.sectionTitle}>Interactions</Text>
             </>
-          ) : null}
+          )}
+          
           {rouges.length > 0 && (
             <>
               <Text style={styles.sectionSubTitleR}>Dangers élevés à connaître</Text>
@@ -133,14 +160,33 @@ const MicronutrientDetailsScreen = () => {
       {loading ? (
         <ActivityIndicator size="large" color="#003B73" />
       ) : (
-        <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} contentContainerStyle={{width: width * 2}}>
-          {data.map((item, idx) => (
-            <React.Fragment key={idx}>
-              <View key={`card1-${idx}`} style={styles.page}>{renderCardOne(item)}</View>
-              <View key={`card2-${idx}`} style={styles.page}>{renderCardTwo(item)}</View>
-            </React.Fragment>
-          ))}
-        </ScrollView>
+        <>
+          <ScrollView 
+            horizontal 
+            pagingEnabled
+            onMomentumScrollEnd={handleMomentumScrollEnd}
+            scrollEventThrottle={16}
+            showsHorizontalScrollIndicator={false} 
+            contentContainerStyle={{width: width * 2}}>
+            {data.map((item, idx) => (
+              <React.Fragment key={idx}>
+                <View key={`card1-${idx}`} style={styles.page}>{renderCardOne(item)}</View>
+                <View key={`card2-${idx}`} style={styles.page}>{renderCardTwo(item)}</View>
+              </React.Fragment>
+            ))}
+          </ScrollView>
+          <View style={styles.paginationContainer}>
+            <View style={styles.pagination}>
+              {[0, 1].map((i) => (
+                <View
+                  key={i}
+                  style={[styles.dot, currentPage === i ? styles.dotActive : null]}
+                />
+              ))}
+            </View>
+          </View>  
+        </>
+        
       )}
     </View>            
   );
@@ -196,6 +242,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
   },
+  cardScroll: { paddingBottom: 60 },
   card: {
     backgroundColor: "white",
     borderRadius: 12,
@@ -207,6 +254,29 @@ const styles = StyleSheet.create({
     elevation: 3,
     width: "100%",
     maxWidth: width - 32,
+  },
+  paginationContainer: {
+    position: 'absolute',
+    top: 12,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  pagination: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#ccc',
+    marginHorizontal: 4,
+  },
+  dotActive: {
+    backgroundColor: '#003B73',
   },
   title: {
     fontSize: 24,
@@ -224,9 +294,8 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: "bold",
     marginBottom: 8,
-    color: "#333",
+    color: "#001F54",
     flexWrap: "wrap",
   },
   bulletContainer: {

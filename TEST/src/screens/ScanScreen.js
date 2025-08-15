@@ -1,20 +1,166 @@
 // ScanScreen.js
-import React, { useEffect, useRef, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
-import { CameraView, Camera, CameraType, useCameraPermissions } from 'expo-camera';
-import axios from "axios";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback
+} from "react-native";
+import { CameraView, useCameraPermissions } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
-import {useRoute, useNavigation} from "@react-navigation/native"
-
-const API_BASE = "https://muka-lept.onrender.com"; //"http://192.168.1.60:5001";
+import { useNavigation } from "@react-navigation/native";
 
 const ScanScreen = () => {
-  const facing= useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  const [manualCode, setManualCode] = useState("");
   const navigation = useNavigation();
 
   useEffect(() => {
+    if (!permission) requestPermission();
+  }, [permission]);
+
+  const handleBarcodeScanned = ({ data }) => {
+    if (scanned) return;
+    setScanned(true);
+    console.log("Code trouvé :", data);
+    navigation.navigate("ScanResultScreen", { ean: data });
+    setTimeout(() => setScanned(false), 3000);
+  };
+
+  const handleManualSubmit = () => {
+    if (!manualCode.trim()) return;
+    navigation.navigate("ScanResultScreen", { ean: manualCode.trim() });
+    setManualCode("");
+    Keyboard.dismiss();
+  };
+
+  if (!permission) {
+    return <View style={styles.container}><Text>Demande d'autorisation...</Text></View>;
+  }
+
+  if (!permission.granted) {
+    return (
+      <View style={styles.container}>
+        <Text>Permission caméra requise.</Text>
+        <TouchableOpacity onPress={requestPermission} style={styles.button}>
+          <Text style={styles.buttonText}>Autoriser</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <View style={styles.cameraWrapper}>
+          <CameraView
+            onBarcodeScanned={handleBarcodeScanned}
+            style={styles.camera}
+            autoFocus="on"
+            whiteBalance="auto"
+            barcodeScannerSettings={{
+              barcodeTypes: ["ean13", "ean8", "upc_a"],
+            }}
+          />
+          <View style={styles.scanBox} />
+        </View>
+
+        <View style={styles.manualContainer}>
+          <Text style={styles.manualLabel}>Code-barres manuel :</Text>
+          <View style={styles.inputRow}>
+            <TextInput
+              style={styles.manualInput}
+              placeholder="Entrez un code-barres"
+              value={manualCode}
+              onChangeText={setManualCode}
+              keyboardType="numeric"
+              returnKeyType="done"
+              onSubmitEditing={handleManualSubmit}
+            />
+            <TouchableOpacity onPress={handleManualSubmit} style={styles.submitButton}>
+              <Ionicons name="arrow-forward-circle" size={28} color="#003B73" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  cameraWrapper: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  camera: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
+  },
+  scanBox: {
+    width: 250,
+    height: 150,
+    borderWidth: 2,
+    borderColor: "#00BFFF",
+    borderRadius: 12,
+    zIndex: 2,
+  },
+  manualContainer: {
+    padding: 20,
+    backgroundColor: "#FAFAF5",
+  },
+  manualLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 8,
+    color: "#003B73",
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  manualInput: {
+    flex: 1,
+    height: 48,
+    borderColor: "#003B73",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    color: "#003B73",
+  },
+  submitButton: {
+    marginLeft: 10,
+  },
+  button: {
+    marginTop: 20,
+    backgroundColor: "#003B73",
+    padding: 12,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+});
+
+export default ScanScreen;
+
+ /* useEffect(() => {
     const getCameraPermissions = async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === "granted");
@@ -124,4 +270,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ScanScreen;
+export default ScanScreen;*/

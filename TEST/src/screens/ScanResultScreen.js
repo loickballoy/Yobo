@@ -119,7 +119,7 @@ const ScanResultScreen = () => {
       ) : (
         <ScrollView contentContainerStyle={styles.scroll}>
           {data.slice(0,1).map((item, idx) => {
-            const effet = item["Effet pour le patient"] || item["Effet pour patient"] || "";
+            const effet = item["Effet pour le patient"] || item["Effet pour patient"] || item["Effet pour le Patient"] || "";
             const lignes = effet.split(/\r?\n/);
 
             const rouges = lignes
@@ -166,7 +166,7 @@ const ScanResultScreen = () => {
                   <View style={styles.riskSummaryContainer}>
                     <View style={styles.riskBullet} />
                     <Text style={styles.riskText}>
-                      {rouges.length + oranges.length + bleus.length + verts.length} Intéraction(s) détecté(s)
+                      {rouges.length + oranges.length + bleus.length + verts.length} Interaction(s) détecté(s)
                     </Text>
                   </View>
                   
