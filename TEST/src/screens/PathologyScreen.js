@@ -7,6 +7,8 @@ import { Ionicons } from "@expo/vector-icons";
 
 const API_BASE = "https://muka-lept.onrender.com"; //http://192.168.1.60:5001"; // adapte cette IP à ton environnement
 
+
+
 const PathologyScreen = () => {
   const [pathologies, setPathologies] = useState([]);
   const [expanded, setExpanded] = useState({});

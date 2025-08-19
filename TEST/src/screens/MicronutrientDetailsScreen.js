@@ -68,7 +68,7 @@ const MicronutrientDetailsScreen = () => {
     <ScrollView contentContainerStyle={styles.cardScroll}>
       <View style={styles.card}>
         <Text style={styles.title}>{name}</Text>
-        <Text style={styles.sectionTitle}>Dosage</Text>
+        <Text style={styles.sectionTitle}>Dose Recommandée</Text>
         {item["Dose quotidienne Recommandée"] && <BulletBlue text={item["Dose quotidienne Recommandée"]} />}
         {item["Dose Quotidienne Recommandée"] && <BulletBlue text={item["Dose Quotidienne Recommandée"]} />}
         <Text style={styles.sectionTitle}>Indications</Text>
