@@ -11,7 +11,7 @@ const HomeScreen = () => {
     <View style={styles.container}>
       <Text style={styles.title}>NutriScan</Text>
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Main", {screen: "Pathology"})}>
+      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Main", {screen: "Pathologie"})}>
         <Ionicons name="medkit-outline" size={40} color="#001F54" />
         <Text style={styles.buttonText}>Pathologies</Text>
       </TouchableOpacity>
@@ -21,7 +21,7 @@ const HomeScreen = () => {
         <Text style={styles.buttonText}>Scan</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Main", {screen: "Search"})}>
+      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Main", {screen: "Recherche"})}>
         <Ionicons name="search-outline" size={40} color="#001F54" />
         <Text style={styles.buttonText}>Recherche</Text>
       </TouchableOpacity>
