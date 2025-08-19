@@ -21,9 +21,9 @@ function MainTabs() {
       screenOptions={({ route }) => ({
         tabBarIcon: ({ color, size }) => {
           let iconName;
-          if (route.name === "Pathology") iconName = "medkit-outline";
+          if (route.name === "Pathologie") iconName = "medkit-outline";
           else if (route.name === "Scan") iconName = "barcode-outline";
-          else if (route.name === "Search") iconName = "search-outline";
+          else if (route.name === "Recherche") iconName = "search-outline";
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: "#003B73",
@@ -32,9 +32,9 @@ function MainTabs() {
         tabBarStyle: { backgroundColor: "#FAFAF5" },
       })}
     >
-      <Tab.Screen name="Pathology" component={PathologyScreen} />
+      <Tab.Screen name="Pathologie" component={PathologyScreen} />
       <Tab.Screen name="Scan" component={ScanScreen} />
-      <Tab.Screen name="Search" component={RechercheScreen} />
+      <Tab.Screen name="Recherche" component={RechercheScreen} />
     </Tab.Navigator>
   );
 }
