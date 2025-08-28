@@ -9,6 +9,7 @@ from clean_db import clean_db
 from push_db import push_db
 import requests
 import unicodedata
+from threading import Thread
 
 clean_db()
 
@@ -187,12 +188,13 @@ def get_scanned_products():
     print(scanned)
     return jsonify(scanned)
 
-##EAN
-#prefix=34009
+
+def async_update(name, ean):
+    update_barcode_in_sheet(name, ean)
+
+
 @app.route("/qrcode/<ean>", methods=["GET"])
 def get_product(ean):
-
-    #TODO get an image
     img_url = ""
     query = ean
     endpoint = 'https://www.googleapis.com/customsearch/v1'
@@ -207,51 +209,57 @@ def get_product(ean):
         response = requests.get(endpoint, params=params)
         response.raise_for_status()
         data = response.json()
-
         if 'items' in data and len(data['items']) > 0:
-            image_url = data['items'][0]['link']
-            print('Image found:', image_url)
-            img_url = image_url
-        else:
-            print('No image found for barcode:', ean)
-
+            img_url = data['items'][0]['link']
     except requests.RequestException as e:
         print('Error fetching image:', e)
 
-    #img = "jpath-to-image"
-    result = next((entry for entry in micronutrient_data if entry.get("Barcode", "").strip() == ean), None)
-    for entry in micronutrient_data:
-        #print(len(entry.get("Barcode", "").strip().split(',')))
-        #print(entry.get("Barcode", "").strip().split(','))
-        if len(entry.get("Barcode", "").strip().split(',')) > 1:
-            print(entry.get("Barcode", "").strip().split(',')[1])
-
-    print(result)
-    if result:
-        jsonRes = jsonify({"name": result.get("Complément alimentaire")}) #=jsonified_result
-        jsonRes['image'] = img_url
-        print(json.dumps(jsonRes, indent=2))
-        return jsonRes
-
     lookup = EANSearch(EAN_API_TOKEN)
     name = lookup.barcodeLookup(ean)
-    print(name) #Name of the product
-
     product = lookup.barcodeSearch(ean, lang=6)
-    print(ean, " is ", product["name"].encode("utf-8"), " from category ", product["categoryName"], " issued in ", product["issuingCountry"])
+    Thread(target=async_update, args=(product["name"], ean)).start()
 
-    #TODO WORK AGAIN
-    print("here")
-    update_barcode_in_sheet(product["name"], ean)
+    """ingredients = []
+    try:
+        search_res = requests.get("https://world.openfoodfacts.org/cgi/search.pl", params={
+            "search_terms": product["name"],
+            "search_simple": 1,
+            "action": "process",
+            "json": 1
+        })
+        results = search_res.json().get("products", [])
+        if results:
+            ingredients_text = results[0].get("ingredients_text", "")
+            ingredients = ingredients_text.lower().split(", ")
+    except Exception as e:
+        print("Erreur API ingrédients :", e)"""
 
-    #TODO display
+    found_complements = []
+    for entry in micronutrient_data:
+        nom_comp = entry.get("Complément Alimentaire", "").strip().lower()
+        found_complements.append({
+                "name": entry.get("Complément Alimentaire"),
+                "effets": {
+                    "indesirables": entry.get("Effets Indésirables/Contre-Indications", ""),
+                    "patient": entry.get("Effet pour le patient", "")
+                }
+            })
+        """if any(nom_comp in ing for ing in ingredients):
+            found_complements.append({
+                "name": entry.get("Complément Alimentaire"),
+                "effets": {
+                    "indesirables": entry.get("Effets Indésirables/Contre-Indications", ""),
+                    "patient": entry.get("Effet pour le patient", "")
+                }
+            })"""
 
     return jsonify({
+        "ean": ean,
         "name": product.get("name"),
         "category": product.get("categoryName"),
         "country": product.get("issuingCountry"),
-        "ean": ean,
-        "image": img_url
+        "image": img_url,
+        "complements": found_complements
     })
 
 
