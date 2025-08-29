@@ -34,7 +34,12 @@ const RechercheScreen = () => {
       const results = products.filter(p =>
         p.name.toLowerCase().includes(query)
       );
-      setFilteredProducts(results);
+
+      const uniqueResults = Array.from(
+        new Map(results.map(p => [p.barcode, p])).values()
+      );
+
+      setFilteredProducts(uniqueResults);
     }
   }, [searchQuery, products]);
 

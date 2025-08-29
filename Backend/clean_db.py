@@ -5,6 +5,14 @@ import json
 from pathlib import Path
 
 def clean_db():
+    """
+    Read all worksheets from the target Google Spreadsheet, normalize rows,
+    and export a flattened JSON dataset.
+
+    Each worksheet's title is stored under the "Pathologie" key for its rows.
+    Empty rows are skipped. Headers are taken from the first row of each sheet.
+    """
+
     # === CONFIGURATION ===
     SHEET_ID = "1megV5iV3BObRDTqFp2Od-50Sedsv257jLnxziAA3dN0"  # <- remplace ça par l'ID de ton Google Sheet "1g_8ETAvX5H08vR7j2fCDwaVz_mK1IEh_3wFa8QrU1GE"
     SERVICE_ACCOUNT_FILE = "Databases/mukanew-4a4f2dd7432c.json"
@@ -49,6 +57,4 @@ def clean_db():
     else:
         print("[❌] Aucune donnée exportée. Vérifiez la structure des feuilles.")
 
-clean_db()
-
- 
+clean_db() 
