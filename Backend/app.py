@@ -10,6 +10,7 @@ from push_db import push_db
 import requests
 import unicodedata
 from threading import Thread
+from functools import lru_cache
 
 clean_db()
 
@@ -102,6 +103,22 @@ def update_barcode_in_sheet(name, ean):
             print(f"[✅] Aucun complément trouvé avec le nom: {name}")
         else:
             print(f"[❌] {updates_made} lignes mises a jour pour {name}")"""
+
+
+@lru_cache(maxsize=500)
+def cached_lookup(ean):
+    product = {}
+    try:
+        EAN_API_KEY = os.getenv("EAN_API_KEY")
+        res = requests.get(f"https://api.ean-search.org/api?op=barcode-lookup&ean={ean}&key={EAN_API_KEY}", timeout=3)
+        if res.status_code == 200:
+            data = res.json()
+            if data.get("result"):
+                product["ean_data"] = data["result"][0]
+    except Exception as e:
+        print(f"[WARN] EANSearch lookup failed: {e}")
+
+    return product
 
 @app.route('/', methods = ['GET'])
 def get_hello():
@@ -214,9 +231,15 @@ def get_product(ean):
     except requests.RequestException as e:
         print('Error fetching image:', e)
 
-    lookup = EANSearch(EAN_API_TOKEN)
+    product = cached_lookup(ean)
+
+    if not product:
+        return jsonify({"error": "Produit non trouvé"}), 404
+
+    """lookup = EANSearch(EAN_API_TOKEN)
     name = lookup.barcodeLookup(ean)
-    product = lookup.barcodeSearch(ean, lang=6)
+    product = lookup.barcodeSearch(ean, lang=6)"""
+    
     Thread(target=async_update, args=(product["name"], ean)).start()
 
     """ingredients = []
