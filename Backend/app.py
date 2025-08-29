@@ -1,16 +1,23 @@
-from flask import Flask, jsonify, request
-from flask_cors import CORS
+import os
 import json
-from pathlib import Path
-from eansearch import EANSearch
-import sqlite3
-import gspread
-from clean_db import clean_db
-from push_db import push_db
 import requests
 import unicodedata
+from pathlib import Path
 from threading import Thread
 from functools import lru_cache
+
+import sqlite3
+import gspread
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from eansearch import EANSearch
+
+from clean_db import clean_db
+from push_db import push_db
+
+# ==============================
+# Initialization & Config
+# ==============================
 
 clean_db()
 
@@ -20,17 +27,17 @@ lookup = EANSearch(EAN_API_TOKEN)
 CORS(app)
 
 DATA_FILE = Path("Databases/micronutrients_clean.json")
-
-
-# === CONFIGURATION ===
+  
+# Google Sheets
 SHEET_ID = "1megV5iV3BObRDTqFp2Od-50Sedsv257jLnxziAA3dN0"  # <- remplace ça par l'ID de ton Google Sheet "1g_8ETAvX5H08vR7j2fCDwaVz_mK1IEh_3wFa8QrU1GE"
 SERVICE_ACCOUNT_FILE = "Databases/mukanew-4a4f2dd7432c.json"
 EXPORT_FILE = "Databases/micronutrients_clean.json"
 
-# === GOOGLE CONFIG ===
+# Google API Config (Custom Search)
 GOOGLE_API_KEY = ' AIzaSyCJwr2EJnLi7xE_IDUs7p2mQAKgGD319eE '
 CX = 'd00c6b50a680d4683'
 
+# Load micronutrient data
 try:
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         micronutrient_data = json.load(f)
@@ -38,6 +45,10 @@ try:
 except Exception as e:
     micronutrient_data = []
     print("[❌] Erreur de chargement des données : {e}")
+
+# ==============================
+# Utils
+# ==============================
 
 def update_barcode_in_sheet(name, ean):
     if not DATA_FILE.exists():
@@ -66,45 +77,7 @@ def update_barcode_in_sheet(name, ean):
     else:
         print(f"[❌] {updates_made} Aucun complément trouvé avec le nom: {name}")
     
-    #TODO: PUSH THE LOCAL JSON TO OLIVIA GOOGLE SHEETS
     push_db(name, ean)
-
-
-
-    """for ws in spreadsheet.worksheets():
-        
-        values = ws.get_all_values()
-        
-        if not values:
-            continue
-        print("somthing")
-        # Cherche l’index des colonnes
-        headers = values[0]
-        try:
-            name_col = headers.index("Complément alimentaire")
-            barcode_col = headers.index("Barcode")
-        except ValueError:
-            continue  # Colonne non présente
-
-        # Parcourt les lignes pour trouver le complément
-        print("befor")
-        for idx, row in enumerate(values[1:], start=2):  # ligne 2 = idx=1 => start=2 pour gspread
-            if name_col >= len(row):
-                continue
-            row_name = row[name_col].strip().lower()
-            print(row_name)
-
-            if row_name == name:
-                if barcode_col >= len(row) or not row[barcode_col].strip():
-                    ws.update_cell(idx, barcode_col + 1, ean)  # gspread indexe les colonnes à partir de 1
-                    updates_made += 1
-                    print(f"[📝] Barcode ajouté à {name} dans la feuille {ws.title}")
-        
-        if updates_made == 0:
-            print(f"[✅] Aucun complément trouvé avec le nom: {name}")
-        else:
-            print(f"[❌] {updates_made} lignes mises a jour pour {name}")"""
-
 
 @lru_cache(maxsize=500)
 def cached_lookup(ean):
@@ -116,6 +89,19 @@ def cached_lookup(ean):
         print(f"[WARN] EANSearch lookup failed: {e}")
 
     return product
+
+def strip_accents(text):
+    return ''.join(
+        c for c in unicodedata.normalize('NFD', text)
+        if unicodedata.category(c) != 'Mn'
+    ).lower()
+
+def async_update(name, ean):
+    update_barcode_in_sheet(name, ean)
+
+# ==============================
+# Routes
+# ==============================  
 
 @app.route('/', methods = ['GET'])
 def get_hello():
@@ -149,12 +135,6 @@ def get_complement_details(pathologie ,nom):
         if comp in nom.lower() and comp2.startswith(pathologie.lower()):
             results.append(entry)
     return jsonify(results)
-
-def strip_accents(text):
-    return ''.join(
-        c for c in unicodedata.normalize('NFD', text)
-        if unicodedata.category(c) != 'Mn'
-    ).lower()
 
 @app.route("/complement/<nom>", methods=["GET"])
 def get_complements(nom):
@@ -203,10 +183,6 @@ def get_scanned_products():
     return jsonify(scanned)
 
 
-def async_update(name, ean):
-    update_barcode_in_sheet(name, ean)
-
-
 @app.route("/qrcode/<ean>", methods=["GET"])
 def get_product(ean):
     img_url = ""
@@ -233,25 +209,8 @@ def get_product(ean):
     if not product:
         return jsonify({"error": "Produit non trouvé"}), 404
 
-    lookup = EANSearch(EAN_API_TOKEN)
-    product = lookup.barcodeSearch(ean, lang=6)
-
     Thread(target=async_update, args=(product["name"], ean)).start()
 
-    """ingredients = []
-    try:
-        search_res = requests.get("https://world.openfoodfacts.org/cgi/search.pl", params={
-            "search_terms": product["name"],
-            "search_simple": 1,
-            "action": "process",
-            "json": 1
-        })
-        results = search_res.json().get("products", [])
-        if results:
-            ingredients_text = results[0].get("ingredients_text", "")
-            ingredients = ingredients_text.lower().split(", ")
-    except Exception as e:
-        print("Erreur API ingrédients :", e)"""
 
     found_complements = []
     for entry in micronutrient_data:
@@ -263,14 +222,6 @@ def get_product(ean):
                     "patient": entry.get("Effet pour le patient", "")
                 }
             })
-        """if any(nom_comp in ing for ing in ingredients):
-            found_complements.append({
-                "name": entry.get("Complément Alimentaire"),
-                "effets": {
-                    "indesirables": entry.get("Effets Indésirables/Contre-Indications", ""),
-                    "patient": entry.get("Effet pour le patient", "")
-                }
-            })"""
 
     return jsonify({
         "ean": ean,
