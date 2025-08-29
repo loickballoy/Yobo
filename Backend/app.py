@@ -16,6 +16,7 @@ clean_db()
 
 app = Flask(__name__)
 EAN_API_TOKEN="d016ac8894202cee4195ac5faa82037baa4a300e"
+lookup = EANSearch(EAN_API_TOKEN)
 CORS(app)
 
 DATA_FILE = Path("Databases/micronutrients_clean.json")
@@ -107,14 +108,10 @@ def update_barcode_in_sheet(name, ean):
 
 @lru_cache(maxsize=500)
 def cached_lookup(ean):
-    product = {}
     try:
-        EAN_API_KEY = os.getenv("EAN_API_KEY")
-        res = requests.get(f"https://api.ean-search.org/api?op=barcode-lookup&ean={ean}&key={EAN_API_KEY}", timeout=3)
-        if res.status_code == 200:
-            data = res.json()
-            if data.get("result"):
-                product["ean_data"] = data["result"][0]
+        product = lookup.barcodeSearch(ean, lang=6)
+        if product and "name" in product[0]:
+            return product[0]
     except Exception as e:
         print(f"[WARN] EANSearch lookup failed: {e}")
 
@@ -236,10 +233,9 @@ def get_product(ean):
     if not product:
         return jsonify({"error": "Produit non trouvé"}), 404
 
-    """lookup = EANSearch(EAN_API_TOKEN)
-    name = lookup.barcodeLookup(ean)
-    product = lookup.barcodeSearch(ean, lang=6)"""
-    
+    lookup = EANSearch(EAN_API_TOKEN)
+    product = lookup.barcodeSearch(ean, lang=6)
+
     Thread(target=async_update, args=(product["name"], ean)).start()
 
     """ingredients = []
@@ -259,7 +255,7 @@ def get_product(ean):
 
     found_complements = []
     for entry in micronutrient_data:
-        nom_comp = entry.get("Complément Alimentaire", "").strip().lower()
+        # nom_comp = entry.get("Complément Alimentaire", "").strip().lower()
         found_complements.append({
                 "name": entry.get("Complément Alimentaire"),
                 "effets": {
