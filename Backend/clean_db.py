@@ -15,7 +15,7 @@ def clean_db():
 
     # === CONFIGURATION ===
     SHEET_ID = "1megV5iV3BObRDTqFp2Od-50Sedsv257jLnxziAA3dN0"  # <- remplace ça par l'ID de ton Google Sheet "1g_8ETAvX5H08vR7j2fCDwaVz_mK1IEh_3wFa8QrU1GE"
-    SERVICE_ACCOUNT_FILE = "Databases/mukanew-4a4f2dd7432c.json"
+    SERVICE_ACCOUNT_FILE = "Databases/mukanew-3dc8c69e874c.json"
     EXPORT_FILE = "Databases/micronutrients_clean.json"
 
     # === Connexion à Google Sheets ===
