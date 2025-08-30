@@ -1,6 +1,6 @@
 # 🧪 NutriScan
 
-NutriScan is a mobile and web application that allows users to **scan pharmaceutical products** by barcode (EAN) and get:
+NutriScan is a mobile application that allows users to **scan pharmaceutical products** by barcode (EAN) and get:
 - Product information (name, category, country of issue, image)
 - Possible interactions with micronutrients
 - Side effects and patient-related effects extracted from curated datasets
