@@ -9,7 +9,7 @@ const HomeScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>NutriScan</Text>
+      <Text style={styles.title}>Muka</Text>
 
       <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Main", {screen: "Pathologie"})}>
         <Ionicons name="medkit-outline" size={40} color="#001F54" />

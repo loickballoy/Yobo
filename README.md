@@ -1,6 +1,6 @@
-# 🧪 NutriScan
+# 🧪 Muka
 
-NutriScan is a mobile application that allows users to **scan pharmaceutical products** by barcode (EAN) and get:
+Muka is a mobile application that allows users to **scan pharmaceutical products** by barcode (EAN) and get:
 - Product information (name, category, country of issue, image)
 - Possible interactions with micronutrients
 - Side effects and patient-related effects extracted from curated datasets
@@ -41,7 +41,7 @@ This project was developed to learn more about app development and challenge mys
 ## 📂 Project Structure
 
 ```
-NutriScan/
+Muka/
 │
 ├── frontend/ # React Native mobile app (Expo)
 │ ├── App.js
@@ -109,7 +109,7 @@ Open the Expo DevTools, run on simulator or scan QR code on your device.
 - ```GET /scanned```→ already scanned products
 
 ---
-## 📸 Watch the demo for NutriScan!
+## 📸 Watch the demo for Muka!
 
 [![Watch the demo](https://img.youtube.com/vi/AAt_0GxZDq0/0.jpg)](https://youtube.com/shorts/AAt_0GxZDq0?feature=share)
 
