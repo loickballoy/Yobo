@@ -8,7 +8,8 @@ from functools import lru_cache
 
 import sqlite3
 import gspread
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, abort
+from functools import wraps
 from flask_cors import CORS
 from eansearch import EANSearch
 
@@ -16,6 +17,59 @@ from clean_db import clean_db
 from push_db import push_db
 
 from utils import *
+
+import re
+from dotenv import load_dotenv
+
+load_dotenv()
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
+SUPABASE_AUTH_URL = f"{SUPABASE_URL}/auth/v1"
+if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+    raise RuntimeError("Missing SUPABASE_URL or SUPABASE_ANON_KEY in environment.")
+
+def supabase_auth_request(method: str, path: str, json_payload=None, params=None, token=None):
+    """
+    Minimal wrapper for Supabase Auth (GoTrue) endpoints.
+    If token is provided, it will be used as Bearer; otherwise uses anon key in apikey header.
+    """
+    url = f"{SUPABASE_AUTH_URL}{path}"
+    headers = {
+        "apikey": SUPABASE_ANON_KEY,
+        "Content-Type": "application/json",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    resp = requests.request(method, url, headers=headers, json=json_payload, params=params, timeout=20)
+    # Bubble up useful error details to client
+    try:
+        data = resp.json()
+    except ValueError:
+        data = {"error": "Invalid response from Supabase Auth.", "status": resp.status_code}
+    return resp.status_code, data
+
+def requires_auth(f):
+    """
+    Decorator to protect routes. Expects an 'Authorization: Bearer <access_token>' header.
+    Verifies token by calling /auth/v1/user.
+    """
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        auth_header = request.headers.get("Authorization", "")
+        m = re.match(r"Bearer\s+(.+)", auth_header)
+        if not m:
+            return jsonify({"error": "Missing or invalid Authorization header."}), 401
+        access_token = m.group(1).strip()
+        status, user_data = supabase_auth_request("GET", "/user", token=access_token)
+        if status != 200:
+            return jsonify({"error": "Invalid or expired token.", "details": user_data}), 401
+
+        # Make user info available to the route if needed
+        request.supabase_user = user_data  # contains 'id', 'email', etc.
+        return f(*args, **kwargs)
+    return wrapper
+
 
 # ==============================
 # Initialization & Config
@@ -224,6 +278,63 @@ def get_product(ean):
         "complements": found_complements
     })
 
+
+# ==============================
+# Auth Routes (Supabase)
+# ==============================
+
+@app.route("/auth/signup", methods=["POST"])
+def auth_signup():
+    """
+    Body: { "email": "...", "password": "...", "data": { ...optional user_metadata... } }
+    Returns: { "user": {...}, "session": {...} } or an error from Supabase.
+    """
+    try:
+        body = request.get_json(force=True) or {}
+        email = body.get("email", "").strip()
+        password = body.get("password", "")
+        user_metadata = body.get("data") or {}
+
+        if not email or not password:
+            return jsonify({"error": "email and password are required"}), 400
+
+        status, data = supabase_auth_request(
+            "POST",
+            "/signup",
+            json_payload={"email": email, "password": password, "data": user_metadata},
+        )
+        # Supabase returns 200 on success, 400/422 on errors (e.g., already registered)
+        return jsonify(data), status
+    except Exception as e:
+        return jsonify({"error": "Unexpected error during signup", "details": str(e)}), 500
+
+
+@app.route("/auth/login", methods=["POST"])
+def auth_login():
+    """
+    Body: { "email": "...", "password": "..." }
+    Returns: { "user": {...}, "access_token": "...", "refresh_token": "...", "expires_in": ... }
+    """
+    try:
+        body = request.get_json(force=True) or {}
+        email = body.get("email", "").strip()
+        password = body.get("password", "")
+
+        if not email or not password:
+            return jsonify({"error": "email and password are required"}), 400
+
+        # GoTrue password grant
+        status, data = supabase_auth_request(
+            "POST",
+            "/token",
+            params={"grant_type": "password"},
+            json_payload={"email": email, "password": password},
+        )
+        return jsonify(data), status
+    except Exception as e:
+        return jsonify({"error": "Unexpected error during login", "details": str(e)}), 500
+
+        
 
 if __name__ == "__main__":
     import os
