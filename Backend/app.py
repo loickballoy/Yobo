@@ -89,6 +89,9 @@ def cached_lookup(ean):
 
     return product
 
+def async_update(name, ean):
+    update_barcode_in_sheet(name, ean)
+
 # ==============================
 # Routes
 # ==============================  
@@ -203,15 +206,13 @@ def get_product(ean):
 
     found_complements = []
     for entry in micronutrient_data:
-        comp_field = entry.get("Complément Alimentaire", "")
-        if name_matches(comp_field, product.get("name", "")):
-            found_complements.append({
-                    "name": entry.get("Complément Alimentaire"),
-                    "effets": {
-                        "indesirables": entry.get("Effets Indésirables/Contre-Indications", ""),
-                        "patient": entry.get("Effet pour le patient", "")
-                    }
-                })
+        found_complements.append({
+            "name": entry.get("Complément Alimentaire"),
+            "effets": {
+                "indesirables": entry.get("Effets Indésirables/Contre-Indications", ""),
+                "patient": entry.get("Effet pour le patient", "")
+            }
+        })
 
     return jsonify({
         "ean": ean,
