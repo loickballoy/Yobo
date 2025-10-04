@@ -1,4 +1,5 @@
-import re  # <- add at top with other imports
+import re  
+import unicodedata
 
 def normalize_text(s: str) -> str:
     """
