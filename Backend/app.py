@@ -15,6 +15,8 @@ from eansearch import EANSearch
 from clean_db import clean_db
 from push_db import push_db
 
+import utils
+
 # ==============================
 # Initialization & Config
 # ==============================
@@ -58,16 +60,13 @@ def update_barcode_in_sheet(name, ean):
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    name = name.strip().lower()
     updates_made = 0
 
     for entry in data:
-        comp_name = entry.get("Complément Alimentaire", "").strip().lower()
-        barcode = entry.get("Barcode", "").strip()
-
-        if comp_name in name:
+        comp_field = entry.get("Complément Alimentaire", "")
+        if utils.name_matches(comp_field, name):
             entry["Barcode"] = ean
-            updates_made += 1
+            updates += 1
             print(f"[📝] Barcode ajouté à {name}")
 
     if updates_made > 0:
@@ -89,15 +88,6 @@ def cached_lookup(ean):
         print(f"[WARN] EANSearch lookup failed: {e}")
 
     return product
-
-def strip_accents(text):
-    return ''.join(
-        c for c in unicodedata.normalize('NFD', text)
-        if unicodedata.category(c) != 'Mn'
-    ).lower()
-
-def async_update(name, ean):
-    update_barcode_in_sheet(name, ean)
 
 # ==============================
 # Routes
@@ -130,9 +120,8 @@ def get_complements_by_pathologie(pathologie):
 def get_complement_details(pathologie ,nom):
     results = []
     for entry in micronutrient_data:
-        comp = entry.get("Complément Alimentaire", "").lower()
-        comp2 = entry.get("Pathologie", "").lower()
-        if comp in nom.lower() and comp2.startswith(pathologie.lower()):
+        comp_field = entry.get("Complément Alimentaire", "")
+        if name_matches(comp_field, nom):
             results.append(entry)
     return jsonify(results)
 
@@ -152,12 +141,12 @@ def get_interactions():
     if not query:
         return jsonify({"error": "Paramètre 'with' manquant"}), 400
 
-    names = [n.strip().lower() for n in query.split("+")]
+    names = [n.strip() for n in query.split("+")]
     results = []
 
     for entry in micronutrient_data:
-        comp_name = entry.get("Complement_Alimentaire", "").lower()
-        if comp_name in names:
+        comp_field = entry.get("Complément Alimentaire", "")
+        if any(name_matches(comp_field, n) for n in names):
             results.append(entry)
 
     return jsonify(results)
@@ -214,14 +203,15 @@ def get_product(ean):
 
     found_complements = []
     for entry in micronutrient_data:
-        # nom_comp = entry.get("Complément Alimentaire", "").strip().lower()
-        found_complements.append({
-                "name": entry.get("Complément Alimentaire"),
-                "effets": {
-                    "indesirables": entry.get("Effets Indésirables/Contre-Indications", ""),
-                    "patient": entry.get("Effet pour le patient", "")
-                }
-            })
+        comp_field = entry.get("Complément Alimentaire", "")
+        if name_matches(comp_field, profuct.get("name", "")):
+            found_complements.append({
+                    "name": entry.get("Complément Alimentaire"),
+                    "effets": {
+                        "indesirables": entry.get("Effets Indésirables/Contre-Indications", ""),
+                        "patient": entry.get("Effet pour le patient", "")
+                    }
+                })
 
     return jsonify({
         "ean": ean,
