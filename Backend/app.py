@@ -66,7 +66,7 @@ def update_barcode_in_sheet(name, ean):
         comp_field = entry.get("Complément Alimentaire", "")
         if name_matches(comp_field, name):
             entry["Barcode"] = ean
-            updates += 1
+            updates_made += 1
             print(f"[📝] Barcode ajouté à {name}")
 
     if updates_made > 0:
