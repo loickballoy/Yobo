@@ -15,7 +15,7 @@ from eansearch import EANSearch
 from clean_db import clean_db
 from push_db import push_db
 
-import utils
+from utils import *
 
 # ==============================
 # Initialization & Config
@@ -64,7 +64,7 @@ def update_barcode_in_sheet(name, ean):
 
     for entry in data:
         comp_field = entry.get("Complément Alimentaire", "")
-        if utils.name_matches(comp_field, name):
+        if name_matches(comp_field, name):
             entry["Barcode"] = ean
             updates += 1
             print(f"[📝] Barcode ajouté à {name}")
