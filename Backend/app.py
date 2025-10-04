@@ -131,7 +131,6 @@ def get_complement_details(pathologie ,nom):
 @app.route("/complement/<nom>", methods=["GET"])
 def get_complements(nom):
     results = []
-    nom_normalized = nom
     for entry in micronutrient_data:
         comp = entry.get("Complément Alimentaire", "").lower()
         if comp in nom.lower():
@@ -206,13 +205,15 @@ def get_product(ean):
 
     found_complements = []
     for entry in micronutrient_data:
-        found_complements.append({
-            "name": entry.get("Complément Alimentaire"),
-            "effets": {
-                "indesirables": entry.get("Effets Indésirables/Contre-Indications", ""),
-                "patient": entry.get("Effet pour le patient", "")
-            }
-        })
+        comp_field = entry.get("Complément Alimentaire", "")
+        if name_matches(comp_field, product.get("name", "")):
+            found_complements.append({
+                "name": entry.get("Complément Alimentaire"),
+                "effets": {
+                    "indesirables": entry.get("Effets Indésirables/Contre-Indications", ""),
+                    "patient": entry.get("Effet pour le patient", "")
+                }
+            })
 
     return jsonify({
         "ean": ean,

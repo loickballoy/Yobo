@@ -8,7 +8,7 @@ def normalize_text(s: str) -> str:
     """
     if not s:
         return ""
-    s = strip_accents(s).lower()
+    # s = strip_accents(s).lower() <-- bugged ?
     # remove surrounding quotes and extra pipes spacing later
     s = s.replace('“', '"').replace('”', '"').replace('’', "'")
     # kill quotes but keep the letters
@@ -44,6 +44,3 @@ def strip_accents(text):
         c for c in unicodedata.normalize('NFD', text)
         if unicodedata.category(c) != 'Mn'
     ).lower()
-
-def async_update(name, ean):
-    update_barcode_in_sheet(name, ean)
