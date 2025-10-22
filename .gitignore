@@ -8,3 +8,6 @@ TEST/.idea/caches/deviceStreaming.xml
 TEST/.idea/workspace.xml
 
 trash/*
+.env
+Backend/.env
+Backend/main.py

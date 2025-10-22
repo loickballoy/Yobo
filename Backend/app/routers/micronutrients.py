@@ -37,7 +37,7 @@ async def get_pathologies() -> list:
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@MNRouter.get("/complements/{pathologie}", tags=["Micronutrients"])
+@MNRouter.get("/complements/{pathology}", tags=["Micronutrients"])
 async def get_complement_by_pathology(pathology: str) -> list:
     """
         Returns a list of Micronutrients associated with a given pathology.
@@ -53,7 +53,7 @@ async def get_complement_by_pathology(pathology: str) -> list:
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@MNRouter.get("/complement/{pathologie}/{nom}", tags=["Micronutrients"])
+@MNRouter.get("/complement/{pathology}/{name}", tags=["Micronutrients"])
 async def get_complement_details(pathology: str, name: str) -> list:
     """
         Returns a list of matching components inside a given Pathology
@@ -75,7 +75,7 @@ async def get_complement_details(pathology: str, name: str) -> list:
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@MNRouter.get("/complement/{nom}", tags=["Micronutrients"])
+@MNRouter.get("/complement/{name}", tags=["Micronutrients"])
 async def get_complents(name: str) -> list[dict[str, Any]]:
     """
         Returns a list of matching components regardless of the given pathologies
