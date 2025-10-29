@@ -11,3 +11,4 @@ trash/*
 .env
 Backend/.env
 Backend/main.py
+Backend/Databases/mukanew-d0a687009bea.json

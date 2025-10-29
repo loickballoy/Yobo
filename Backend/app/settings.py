@@ -12,6 +12,8 @@ DATABASE_KEY = os.getenv('DATABASE_KEY')
 
 JWT_SECRET = os.getenv('JWT_SECRET')
 JWT_ALGORITHM = os.getenv('JWT_ALGORITHM')
+EXPIRE = os.getenv('ACCESS_TOKEN_EXPIRES_MIN')
+REFRESH = os.getenv('REFRESH_TOKEN_EXPIRES_DAYS')
 
 EAN_API_TOKEN = os.getenv('EAN_API_TOKEN')
 
@@ -31,6 +33,8 @@ class Settings:
 
     jwt_algorithm: str = JWT_ALGORITHM
     jwt_secret: str = JWT_SECRET
+    expires: int = int(EXPIRE)
+    refresh: int = int(REFRESH)
 
     ean_api_token: str = EAN_API_TOKEN
 

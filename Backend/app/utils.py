@@ -12,7 +12,9 @@ import gspread
 import pandas as pd
 import re
 import json
+from typing import Any
 from pathlib import Path
+from datetime import datetime
 
 ## DB and Scan operation
 def clean_db() -> None:
@@ -97,8 +99,10 @@ def update(name: str, ean: str) -> None:
 def name_matches(comp: str, name: str) -> bool:
     possible_names = comp.split("|")
     for n in possible_names:
-        if n and unidecode(n.strip()) in unidecode(name.strip()):
+        # print(f'comparing {n} and {name}')
+        if n and unidecode(n.strip().lower()) in unidecode(name.strip().lower()):
             return True
+    return False
 
 def get_img(ean: str) -> str:
     """
@@ -124,7 +128,7 @@ def get_img(ean: str) -> str:
     return ""
 
 @lru_cache(maxsize=1000)
-def cached_lookup(ean: str) -> dict[str, str] | None:
+def cached_lookup(ean: str) -> str:
     try:
         product = lookup.barcodeSearch(ean, lang=6)
         return product["name"]
@@ -169,3 +173,43 @@ def update_verification_token(real_user: User, token: str) -> None:
         "token": token
     }
     supabase.table('verification_tokens').update(payload).eq("user_id", uuid).execute()
+
+def get_user_uuid(email: str):
+    supabase = next(get_supabase())
+    response = supabase.table('Users').select('*').eq("email", email).execute()
+    return response.data[0]["uuid"]
+
+def add_to_history(uuid: str, product_name: str, img_url: str) -> None:
+    supabase = next(get_supabase())
+    existing_histo = supabase.table("History").select("*").eq("product_name", product_name)
+    if not existing_histo:
+        response = (
+            supabase.table("History")
+            .insert({
+                "user_id": uuid,
+                "product_name": product_name,
+                "img_url": img_url
+            }).execute()
+        )
+    else:
+        response = (
+            supabase.table("History")
+            .update({
+                "created_at": str(datetime.now()),
+                "user_id": uuid,
+                "product_name": product_name,
+                "img_url": img_url
+            })
+            .eq("product_name", product_name)
+            .execute()
+        )
+
+def get_user_history(uuid: str) -> list[dict[str, Any]]:
+    supabase = next(get_supabase())
+    response = (
+        supabase.table("History")
+        .select("*")
+        .eq("user_id",uuid)
+        .execute()
+    )
+    return response.data

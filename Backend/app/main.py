@@ -5,16 +5,29 @@ import json
 import uvicorn
 
 from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.models import User
 from app.utils import clean_db
 from app.settings import settings, data
+from app.security import *
 
 from app.routers.auth import AuthRouter
 from app.routers.micronutrients import MNRouter
 from app.routers.scan import ScanRouter
 
 app = FastAPI()
+
+origins = ['*']
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 clean_db()
 
@@ -36,4 +49,5 @@ async def hello_world():
 app.include_router(AuthRouter)
 app.include_router(MNRouter)
 app.include_router(ScanRouter)
+app.include_router(SecurityRouter)
 
