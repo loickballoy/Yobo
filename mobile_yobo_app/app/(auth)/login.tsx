@@ -27,12 +27,10 @@ const Login = () => {
 
         try {
             // Call /token
-            axios.post(`${API_BASE}/token`, {
-                username: email,
-                password: password,
+            axios.post(`${API_BASE}/security/token`, {
+                
             }).then((res) => {
                 console.log(res.data);
-                setSuccess(true);
             }).catch((err) => {
                 console.log(err);
             })
