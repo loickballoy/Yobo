@@ -1,7 +1,7 @@
-# 🧪 Muka
+# 🧪 Yobo
 
-Muka is a mobile application that allows users to **scan pharmaceutical products** by barcode (EAN) and get:
-- Product information (name, category, country of issue, image)
+Yobo is a mobile application that allows users to **scan pharmaceutical products** by barcode (EAN) and get:
+- Product information (name, image, effects)
 - Possible interactions with micronutrients
 - Side effects and patient-related effects extracted from curated datasets
 
@@ -11,9 +11,9 @@ This project was developed to learn more about app development and challenge mys
 
 ## 🚀 Features
 
-- 📱 **Barcode scanning** via mobile app (React Native + Expo)
+- 📱 **Barcode scanning** via mobile app (React Native + Expo + tailwindcss/nativewind)
 - 🔍 **EAN product lookup** using the [EANSearch API](https://www.ean-search.org/)
-- 📊 **Micronutrient dataset** stored in Google Sheets and synced into a local JSON database
+- 📊 **Micronutrient dataset** stored in Google Sheets and synced into a local JSON database (suboptimal dataset but simpler for non-tech workers to update and correct the dataset)
 - 🗂 **Pathology & supplement mapping**
 - ⚡ **Fast backend** with caching and async updates
 
@@ -23,41 +23,39 @@ This project was developed to learn more about app development and challenge mys
 
 **Frontend**
 - React Native (Expo)
-- React Navigation
+- Nativewind
 - Axios (for API calls)
 
 **Backend**
-- Python (Flask)
-- Flask-CORS
+- Python (FastAPI)
+- FastAPI CORS
 - EANSearch SDK
 - Google Sheets API (via gspread)
 - JSON for local storage
 
 **Other**
-- GitHub Actions (CI/CD ready)
+- Render (CI/CD)
 
 ---
 
 ## 📂 Project Structure
 
 ```
-Muka/
+Yobo/
 │
-├── frontend/ # React Native mobile app (Expo)
-│ ├── App.js
+├── mobile_yobo_app/ # React Native mobile app (Expo)
+│ ├── app/...
 │ ├── package.json
-│ └── screens/...
+│ └── app.json
 │
-├── backend/ # Python Flask API
-│ ├── app.py # Main API
-│ ├── push_db.py # Updates Google Sheets
-│ ├── clean_db.py # Cleans and exports data
-│ └── Databases/
-│ ├── micronutrients_clean.json
-│ └── service_account.json
+├── Backend/ # Python Fast API
+│ ├── main.py # Main 
+│ ├── app/
+│ │   ├── routes/ # API routes
+│ │   ├── ... # utils and other useful python files
+│ ├── requirements.txt # All the pip modules used 
 │
-├── README.md
-└── requirements.txt
+└── README.md
 ```
 
 ---
@@ -66,22 +64,9 @@ Muka/
 
 ### 1. Backend
 
-Clone the repo and install dependencies:
+The Backend is continuously running and deployed on render.com
 
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # (Linux/Mac)
-venv\Scripts\activate     # (Windows)
-
-pip install -r requirements.txt
-```
-
-Run the server:
-
-```
-python app.py
-```
+Our provided API's Swagger can be accessed by: https://muka-lept.onrender.com/docs
 
 ---
 ### 2. Frontend
@@ -89,7 +74,7 @@ python app.py
 Go to the frontend folder:
 
 ```
-cd TEST
+cd mobile_yobo_app
 npm install
 npx expo start -c --tunnel
 ```
@@ -98,33 +83,21 @@ Open the Expo DevTools, run on simulator or scan QR code on your device.
 
 ---
 
-## 🔑 API Endpoints (Backend)
-
-- ```GET /```  → health check
-- ```GET /MicroNutrient```→ all micronutrient data
-- ```GET /pathologies```→ all pathologies
-- ```GET /complements/<pathologie>```→ supplements for a pathology
-- ```GET /complement/<nom>```→ supplement details by name
-- ```GET /qrcode/<ean>```→ product info + interactions
-- ```GET /scanned```→ already scanned products
-
 ---
-## 📸 Watch the demo for Muka!
+## 📸 Watch the demo for Yobo!
 
-[![Watch the demo](https://img.youtube.com/vi/AAt_0GxZDq0/0.jpg)](https://youtube.com/shorts/AAt_0GxZDq0?feature=share)
+Please note that this is a dev demo as such the errors shown only relate to a prior Access token deleted to restart the test freshly. It also displays the time of download which I am currently working on a way to reduce this even in prod.
+
+[![Watch the demo](https://img.youtube.com/vi/W5QGtZ1tncM/maxresdefault.jpg)](https://youtu.be/W5QGtZ1tncM)
 
 ---
 ## 🌱 Roadmap
 
-- Basic EAN scanning and lookup
-
-- Google Sheets integration
-
-- Deploy demo backend on Render (for the backend the full front deploy is ongoing)
-
-- Improve speed 
-
 - Expand dataset coverage
+
+- Implement ```Sentry``` to enhance user experience and prevent bugs.
+
+- Light changes to the UI.
 
 ---
 ## 👤 Author
