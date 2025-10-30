@@ -181,8 +181,8 @@ def get_user_uuid(email: str):
 
 def add_to_history(uuid: str, product_name: str, img_url: str) -> None:
     supabase = next(get_supabase())
-    existing_histo = supabase.table("History").select("*").eq("product_name", product_name)
-    if not existing_histo:
+    existing_histo = supabase.table("History").select("*").eq("product_name", product_name).execute()
+    if not existing_histo.data:
         response = (
             supabase.table("History")
             .insert({

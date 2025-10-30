@@ -61,7 +61,7 @@ export default function Index() {
           <View style={styles.textContainer}>
               <Text style={styles.welcomeText}>Bienvenue sur Yobo!</Text>
               <Text style={styles.subText}>
-                  L'application Indépendante qui t'aide a en apprendre plus sur les compléments alimentaire
+                  L'application Indépendante qui t'aide a en apprendre plus sur tes compléments alimentaires
               </Text>
           </View>
           <View style={styles.buttonSection}>

@@ -1,85 +1,109 @@
-import {Text, View, TextInput, TouchableOpacity, Alert} from 'react-native'
-import React, {useState} from 'react'
-import {SafeAreaView} from "react-native-safe-area-context";
-import {useRouter} from "expo-router";
-import {ActivityIndicator} from "react-native";
-import axios from 'axios';
+import React, { useState } from 'react';
+import {
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    Alert,
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { useAuth } from '../../contexts/AuthContext';
 
-import {images} from "@/constants/images";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+export default function LoginScreen() {
+    const router = useRouter();
+    const { login } = useAuth(); // ✅ Utilisation du Context
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
 
-const Login = () => {
-    const [email, setEmail] = useState<String>("")
-    const [password, setPassword] = useState<String>("")
-    const [success, setSuccess] = React.useState<boolean>(false)
-    const [loading, setLoading] = useState<boolean>(false)
-
-    const router = useRouter()
-
-    const API_BASE= "https://muka-lept.onrender.com";
-
-    const submit = async () => {
+    const handleLogin = async () => {
         if (!email || !password) {
-            return Alert.alert("Error", "Please enter a valid email address and password");
+            Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+            return;
         }
 
         setLoading(true);
 
         try {
-            // Call /token
-            axios.post(`${API_BASE}/security/token`, {
-                
-            }).then((res) => {
-                console.log(res.data);
-            }).catch((err) => {
-                console.log(err);
-            })
-
-            if (success) {
-                router.replace("/scan");
-            }
-        } catch (error)  {
-            console.log(error);
+            await login(email, password); // ✅ Le Context gère tout
+            // La redirection est automatique grâce au RootLayoutNav
+        } catch (error: any) {
+            Alert.alert(
+                'Erreur de connexion',
+                error.message || 'Email ou mot de passe incorrect'
+            );
         } finally {
             setLoading(false);
         }
-    }
+    };
+
+    const handleSignup = () => {
+        router.push('/register');
+    };
 
     return (
-        <View style={{ flex: 1, justifyContent: 'center', alignContent: 'center', padding: 20 , backgroundColor: '#EDE8D0'}}>
+        <SafeAreaView className="flex-1 bg-beige">
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                className="flex-1"
+            >
+                <View className="flex-1 justify-center px-6">
+                    <Text className="text-4xl font-bold text-gray-800 mb-2">
+                        Bienvenue
+                    </Text>
+                    <Text className="text-gray-500 mb-8">
+                        Connectez-vous pour continuer
+                    </Text>
 
-            <Text style={{ fontSize: 28, marginBottom: 20 }}>Se connecter</Text>
+                    <View className="mb-4">
+                        <Text className="text-gray-700 mb-2 font-medium">Email</Text>
+                        <TextInput
+                            value={email}
+                            onChangeText={setEmail}
+                            placeholder="votre@email.com"
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3"
+                        />
+                    </View>
 
+                    <View className="mb-6">
+                        <Text className="text-gray-700 mb-2 font-medium">Mot de passe</Text>
+                        <TextInput
+                            value={password}
+                            onChangeText={setPassword}
+                            placeholder="••••••••"
+                            secureTextEntry
+                            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3"
+                        />
+                    </View>
 
-            <Text>  Email</Text>
-            <TextInput
-                value={email}
-                placeholder="ex: example@user.com"
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                style={{ borderWidth: 1, padding: 10, marginBottom: 12, borderRadius: 12 }} />
+                    <TouchableOpacity
+                        onPress={handleLogin}
+                        disabled={loading}
+                        className="bg-green-100 rounded-xl py-4 mb-4"
+                    >
+                        {loading ? (
+                            <ActivityIndicator color="white" />
+                        ) : (
+                            <Text className="text-white text-center font-semibold text-lg">
+                                Se connecter
+                            </Text>
+                        )}
+                    </TouchableOpacity>
 
-
-            <Text>  Mot de passe</Text>
-            <TextInput
-                value={password}
-                placeholder="Mot De Passe"
-                onChangeText={setPassword}
-                secureTextEntry
-                style={{ borderWidth: 1, padding: 10, marginBottom: 12, borderRadius: 12 }} />
-
-
-            <TouchableOpacity onPress={submit} disabled={loading} style={{ backgroundColor: '#296964', padding: 12, borderRadius: 8, alignItems: 'center' }}>
-                {loading ? <ActivityIndicator /> : <Text style={{ color: 'white' }}>Se connecter</Text>}
-            </TouchableOpacity>
-
-
-            <TouchableOpacity onPress={() => router.push('/register')} style={{ marginTop: 12, alignItems: 'center' }}>
-                <Text>Créer un compte</Text>
-            </TouchableOpacity>
-
-        </View>
-    )
+                    <View className="flex-row justify-center">
+                        <Text className="text-gray-600">Pas encore de compte ? </Text>
+                        <TouchableOpacity onPress={handleSignup}>
+                            <Text className="text-blue-500 font-semibold">S'inscrire</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
+    );
 }
-export default Login
