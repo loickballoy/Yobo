@@ -13,7 +13,7 @@ function TabIcon({focused, icon, title}: any) {
         return (
             <ImageBackground
                 source={images.highlight}
-                className="flex flex-row flex-1 min-w-[128px] min-h-16 mt-4 justify-center items-center rounded-full
+                className="flex flex-row flex-1 min-w-[176px] min-h-16 mt-4 justify-center items-center rounded-full
                 overflow-hidden"
             >
                 <Image source={icon} className="size-5"/>
@@ -75,7 +75,7 @@ const _Layout = () => {
                             )
                         }}
                     />
-                    <Tabs.Screen
+                    {/* <Tabs.Screen
                         name={"pathology"}
                         options={{
                             title: "pathology",
@@ -84,7 +84,7 @@ const _Layout = () => {
                                 <TabIcon focused={focused} icon={icons.pathology} title="Pathologies" />
                             )
                         }}
-                    />
+                    /> */}
                 </ Tabs>
                 <PortalHost name="bottomSheetHost" />
             </PortalProvider>

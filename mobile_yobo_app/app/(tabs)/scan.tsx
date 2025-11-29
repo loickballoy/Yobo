@@ -68,7 +68,7 @@ export default function Scan() {
 
         scanningRef.current = true;
         setIsScanning(true);
-        setHasShownError(true);
+        setHasShownError(false);
 
         try {
             const productData = await apiService.scanProduct(data);
@@ -113,10 +113,10 @@ export default function Scan() {
 
     const handleClose = () => {
         bottomSheetRef.current?.close();
-        setTimeout(() => {
-            setScannedData(null); // Réinitialise pour permettre un nouveau scan
-            setExpandedAction(false);
-        }, 300);
+        console.log("scan ready");
+        setScannedData(null); // Réinitialise pour permettre un nouveau scan
+        setExpandedAction(false);
+        scanningRef.current = false;
     };
 
     const getSeverityColor = (severity: string) => {
@@ -303,7 +303,7 @@ export default function Scan() {
                                                     .map((interaction, index) => (
                                                         <View key={index} className="mt-3">
                                                             <Text className="text-sm text-gray-700 leading-5">
-                                                                • {interaction.action.replace("Que faire ? ", "")}
+                                                                • {interaction.action?.replace("Que faire ? ", "") ?? ""}
                                                             </Text>
                                                         </View>
                                                     ))}
