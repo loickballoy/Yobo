@@ -75,16 +75,6 @@ const _Layout = () => {
                             )
                         }}
                     />
-                    <Tabs.Screen
-                        name={"pathology"}
-                        options={{
-                            title: "pathology",
-                            headerShown: false,
-                            tabBarIcon: ({ focused }) => (
-                                <TabIcon focused={focused} icon={icons.pathology} title="Pathologies" />
-                            )
-                        }}
-                    />
                 </ Tabs>
                 <PortalHost name="bottomSheetHost" />
             </PortalProvider>

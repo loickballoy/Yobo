@@ -1,17 +1,45 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, ScrollView, Alert } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    Image,
+    TouchableOpacity,
+    ActivityIndicator,
+    Alert,
+    Linking,
+    AppState,
+} from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { apiService } from '../../services/apiService';
+import { Portal } from '@gorhom/portal';
 
-import {Portal} from '@gorhom/portal';
+import {
+    DataCaptureView,
+    Camera,
+    FrameSourceState,
+    RectangularViewfinder,
+    RectangularViewfinderStyle,
+    RectangularViewfinderLineStyle,
+    VideoResolution,
+} from 'scandit-react-native-datacapture-core';
+import {
+    BarcodeCapture,
+    BarcodeCaptureOverlay,
+    BarcodeCaptureSession,
+    BarcodeCaptureSettings,
+    Symbology,
+} from 'scandit-react-native-datacapture-barcode';
+
+// Singleton partagé — à placer dans utils/dataCaptureContext.ts
+import dataCaptureContext from '../../utils/dataCaptureContext';
 
 interface Interaction {
     severity: 'Rouge' | 'Orange' | 'Vert' | 'Bleu';
     text: string;
-    action?: string; // Le texte après 💡
+    action?: string;
 }
 
 interface ProductData {
@@ -19,93 +47,211 @@ interface ProductData {
     imageUrl: string;
     interactions: Interaction[];
     sideEffects: string;
+    sources: string[];
 }
 
 export default function Scan() {
-    const [permission, requestPermission] = useCameraPermissions();
     const [scannedData, setScannedData] = useState<ProductData | null>(null);
     const [isScanning, setIsScanning] = useState(false);
     const [expandedAction, setExpandedAction] = useState(false);
+    const [expandedSources, setExpandedSources] = useState(false);
     const bottomSheetRef = useRef<BottomSheet>(null);
-
-    const [hasShownError, setHasShownError] = useState(false);
+    const viewRef = useRef<DataCaptureView>(null);
+    const cameraRef = useRef<Camera>(null!);
+    const barcodeCaptureModeRef = useRef<BarcodeCapture>(null!);
+    const overlayRef = useRef<BarcodeCaptureOverlay>(null!);
     const scanningRef = useRef(false);
 
-    // Parser les interactions depuis le texte
-    const parseInteractions = (text: string): Interaction[] => {
-        if (!text) return [];
+    // Pattern officiel Scandit — init synchrone via ref guard
+    if (!barcodeCaptureModeRef.current) {
+        setupScanning();
+    }
+    if (!overlayRef.current) {
+        overlayRef.current = setupOverlay();
+    }
+
+    // ─── Camera helpers ───────────────────────────────────────────────────────
+    const startCamera = useCallback(async () => {
+        await cameraRef.current?.switchToDesiredState(FrameSourceState.On);
+    }, []);
+
+    const stopCamera = useCallback(async () => {
+        await cameraRef.current?.switchToDesiredState(FrameSourceState.Off);
+    }, []);
+
+    const startCapture = useCallback(async () => {
+        await startCamera();
+        barcodeCaptureModeRef.current.isEnabled = true;
+    }, [startCamera]);
+
+    const stopCapture = useCallback(async () => {
+        barcodeCaptureModeRef.current.isEnabled = false;
+        await stopCamera();
+    }, [stopCamera]);
+
+    // ─── Lifecycle ────────────────────────────────────────────────────────────
+    useEffect(() => {
+        const localBarcodeCapture = barcodeCaptureModeRef.current;
+
+        // Gestion foreground/background
+        const appStateSub = AppState.addEventListener('change', () => {
+            if (AppState.currentState.match(/inactive|background/)) {
+                stopCapture();
+            } else {
+                startCapture();
+            }
+        });
+
+        return () => {
+            appStateSub.remove();
+            dataCaptureContext.removeMode(localBarcodeCapture);
+        };
+    }, [startCapture, stopCapture]);
+
+    // Pause/reprise selon le BottomSheet
+    useEffect(() => {
+        if (scannedData) {
+            barcodeCaptureModeRef.current.isEnabled = false;
+        } else {
+            scanningRef.current = false;
+            barcodeCaptureModeRef.current.isEnabled = true;
+        }
+    }, [scannedData]);
+
+    // ─── Setup Scandit (pattern officiel — synchrone, hors useEffect) ─────────
+    function setupScanning() {
+        const settings = new BarcodeCaptureSettings();
+        settings.enableSymbologies([
+            Symbology.EAN13UPCA,
+            Symbology.EAN8,
+            Symbology.UPCE,
+            Symbology.Code128,
+            Symbology.QR,
+        ]);
+
+        // ✅ new BarcodeCapture() — pas forContext()
+        const barcodeCapture = new BarcodeCapture(settings);
+        barcodeCaptureModeRef.current = barcodeCapture;
+
+        setupCamera();
+
+        const listener = {
+            didScan: async (_: BarcodeCapture, session: BarcodeCaptureSession) => {
+                // ✅ singulier pour BarcodeCapture
+                const barcode = session.newlyRecognizedBarcode;
+                if (!barcode?.data) return;
+                await handleBarCodeScanned(barcode.data);
+            },
+        };
+
+        barcodeCapture.addListener(listener);
+
+        // ✅ setMode() — pas forContext()
+        dataCaptureContext.setMode(barcodeCapture);
+    }
+
+    async function setupCamera() {
+        const cameraSettings = BarcodeCapture.createRecommendedCameraSettings();
+        cameraSettings.preferredResolution = VideoResolution.FullHD;
+
+        const camera = Camera.withSettings(cameraSettings);
+        if (!camera) throw new Error('Caméra non disponible sur cet appareil');
+
+        cameraRef.current = camera;
+        await dataCaptureContext.setFrameSource(camera);
+        await camera.switchToDesiredState(FrameSourceState.On);
+    }
+
+    function setupOverlay(): BarcodeCaptureOverlay {
+        if (!barcodeCaptureModeRef.current) {
+            throw new Error('BarcodeCapture non initialisé');
+        }
+
+        const overlay = new BarcodeCaptureOverlay(barcodeCaptureModeRef.current);
+
+        // Viseur rectangulaire style Scandit
+        overlay.viewfinder = new RectangularViewfinder(
+            RectangularViewfinderStyle.Square,
+            RectangularViewfinderLineStyle.Light
+        );
+
+        return overlay;
+    }
+
+    // ─── Logique métier ───────────────────────────────────────────────────────
+    const parseInteractions = (text: string): { interactions: Interaction[], sources: string[] } => {
+        if (!text) return { interactions: [], sources: [] };
+
+        let sources: string[] = [];
+        let cleanedText = text;
+
+        const sourcesMatch = text.match(/Sources\s*[:\s]+([\s\S]+?)$/i);
+        if (sourcesMatch) {
+            sources = sourcesMatch[1]
+                .split(',')
+                .map(s => s.trim())
+                .filter(s => s.startsWith('http'));
+            cleanedText = text.replace(sourcesMatch[0], '').trim();
+        }
 
         const interactions: Interaction[] = [];
-        const blocks = text.split('\n\n').filter(b => b.trim());
+        const blocks = cleanedText.split('\n\n').filter(b => b.trim());
 
         for (const block of blocks) {
             const lines = block.split('\n');
             const firstLine = lines[0];
 
-            // Détecter la sévérité
             let severity: 'Rouge' | 'Orange' | 'Vert' | 'Bleu' = 'Vert';
             if (firstLine.includes('[Rouge]')) severity = 'Rouge';
             else if (firstLine.includes('[Orange]')) severity = 'Orange';
             else if (firstLine.includes('[Bleu]')) severity = 'Bleu';
 
-            // Extraire le texte principal et l'action
             const mainText = firstLine.replace(/\[(Rouge|Orange|Vert|Bleu)\]/g, '').trim();
             const actionLine = lines.find(l => l.includes('💡'));
             const action = actionLine ? actionLine.replace('💡', '').trim() : undefined;
 
-            interactions.push({
-                severity,
-                text: mainText,
-                action,
-            });
+            interactions.push({ severity, text: mainText, action });
         }
 
-        return interactions;
+        return { interactions, sources };
     };
 
-    const handleBarCodeScanned = async ({ data }: { data: string }) => {
-        if (scanningRef.current) return; // Bloque le scan si déjà en cours ou produit déjà scanné
+    const handleBarCodeScanned = async (data: string) => {
+        if (scanningRef.current) return;
 
         scanningRef.current = true;
         setIsScanning(true);
-        setHasShownError(true);
 
         try {
             const productData = await apiService.scanProduct(data);
-            const transformedData: ProductData = {
+            const { interactions, sources } = parseInteractions(
+                productData.complements?.effets?.patient || ''
+            );
+
+            setScannedData({
                 name: productData.name,
                 imageUrl: productData.image,
-                interactions: parseInteractions(productData.complements?.effets?.patient || ''),
+                interactions,
+                sources,
                 sideEffects: productData.complements?.effets?.indésirables || '',
-            };
-
-            setScannedData(transformedData);
-            bottomSheetRef.current?.snapToIndex(0); // Snap à 25%
+            });
+            bottomSheetRef.current?.snapToIndex(0);
         } catch (error) {
-
-            if (!hasShownError) {
-                setHasShownError(true);
-                Alert.alert(
-                    "Erreur",
-                    "Une erreur s'est produite lors du scan.",
-                    [
-                        {
-                            text: "OK",
-                            onPress: () => {
-                                // Réinitialiser après 2 secondes
-                                setTimeout(() => {
-                                    scanningRef.current = false;
-                                    setIsScanning(false);
-                                    setHasShownError(false);
-                                }, 2000);
-                            }
-                        }
-                    ]
-                );
-            }
-
             console.error('Erreur lors du scan:', error);
-            alert('Produit non trouvé dans notre base de données');
+            Alert.alert(
+                'Erreur',
+                'Produit non trouvé dans notre base de données.',
+                [{
+                    text: 'OK',
+                    onPress: () => {
+                        setTimeout(() => {
+                            scanningRef.current = false;
+                            setIsScanning(false);
+                            barcodeCaptureModeRef.current.isEnabled = true;
+                        }, 1000);
+                    },
+                }]
+            );
         } finally {
             setIsScanning(false);
         }
@@ -114,8 +260,10 @@ export default function Scan() {
     const handleClose = () => {
         bottomSheetRef.current?.close();
         setTimeout(() => {
-            setScannedData(null); // Réinitialise pour permettre un nouveau scan
+            setScannedData(null);
             setExpandedAction(false);
+            setExpandedSources(false);
+            scanningRef.current = false;
         }, 300);
     };
 
@@ -124,8 +272,7 @@ export default function Scan() {
             case 'Rouge': return 'bg-red-500';
             case 'Orange': return 'bg-orange-500';
             case 'Bleu': return 'bg-blue-500';
-            case 'Vert': return 'bg-green-500';
-            default: return 'bg-gray-500';
+            default: return 'bg-green-500';
         }
     };
 
@@ -134,61 +281,51 @@ export default function Scan() {
             case 'Rouge': return 'text-red-600';
             case 'Orange': return 'text-orange-600';
             case 'Bleu': return 'text-blue-600';
-            case 'Vert': return 'text-green-600';
-            default: return 'text-gray-600';
+            default: return 'text-green-600';
         }
     };
 
-    if (!permission) {
-        return (
-            <View className="flex-1 justify-center items-center bg-gray-900">
-                <ActivityIndicator size="large" color="#fff" />
-            </View>
-        );
-    }
-
-    if (!permission.granted) {
-        return (
-            <View className="flex-1 justify-center items-center bg-gray-900 px-6">
-                <Ionicons name="camera-outline" size={64} color="#fff" />
-                <Text className="text-white text-xl font-semibold mt-4 text-center">
-                    Permission caméra requise
-                </Text>
-                <Text className="text-gray-400 text-center mt-2 mb-6">
-                    Nous avons besoin d'accéder à votre caméra pour scanner les produits
-                </Text>
-                <TouchableOpacity
-                    onPress={requestPermission}
-                    className="bg-blue-500 px-8 py-3 rounded-xl"
-                >
-                    <Text className="text-white font-semibold text-lg">
-                        Autoriser l'accès
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        );
-    }
-
+    // ─── Render ───────────────────────────────────────────────────────────────
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
-            <View className="flex-1">
-                <CameraView
+            <View style={{ flex: 1 }}>
+
+                {/* ✅ Caméra plein écran — toujours active, zéro bouton */}
+                <DataCaptureView
                     style={StyleSheet.absoluteFillObject}
-                    onBarcodeScanned={scannedData ? undefined : handleBarCodeScanned}
-                    barcodeScannerSettings={{
-                        barcodeTypes: ['ean13', 'ean8', 'upc_a', 'qr'],
+                    context={dataCaptureContext}
+                    ref={view => {
+                        if (view && !viewRef.current) {
+                            view.addOverlay(overlayRef.current);
+                            viewRef.current = view;
+                        }
                     }}
                 />
 
-                {/* Overlay de scan */}
-                <View className="flex-1 justify-center items-center">
-                    <View className="w-64 h-64 border-2 border-white rounded-3xl" />
-                    <Text className="text-white text-center mt-6 text-lg font-semibold px-8">
+                {/* Overlay texte */}
+                <View
+                    style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 60 }}
+                    pointerEvents="none"
+                >
+                    <Text style={{
+                        color: 'white',
+                        textAlign: 'center',
+                        fontSize: 16,
+                        fontWeight: '600',
+                        paddingHorizontal: 32,
+                        backgroundColor: 'rgba(0,0,0,0.35)',
+                        paddingVertical: 10,
+                        borderRadius: 12,
+                        overflow: 'hidden',
+                    }}>
                         {isScanning ? 'Analyse en cours...' : 'Scannez le code-barres du produit'}
                     </Text>
+                    {isScanning && (
+                        <ActivityIndicator size="large" color="#fff" style={{ marginTop: 12 }} />
+                    )}
                 </View>
 
-                {/* Bottom Sheet */}
+                {/* Bottom Sheet résultat */}
                 {scannedData && (
                     <Portal hostName="bottomSheetHost">
                         <BottomSheet
@@ -200,7 +337,8 @@ export default function Scan() {
                             handleIndicatorStyle={{ backgroundColor: '#D1D5DB' }}
                         >
                             <BottomSheetScrollView className="flex-1 px-6">
-                                {/* Header avec image, nom et nombre d'interactions */}
+
+                                {/* Header */}
                                 <View className="flex-row items-center mb-6">
                                     <Image
                                         source={{ uri: scannedData.imageUrl }}
@@ -214,13 +352,15 @@ export default function Scan() {
                                         <View className="flex-row items-center mt-2">
                                             <View className={`w-3 h-3 rounded-full ${
                                                 scannedData.interactions.some(i => i.severity === 'Rouge') ? 'bg-red-500' :
-                                                    scannedData.interactions.some(i => i.severity === 'Orange') ? 'bg-orange-500' :
-                                                        'bg-green-500'
+                                                scannedData.interactions.some(i => i.severity === 'Orange') ? 'bg-orange-500' :
+                                                'bg-green-500'
                                             }`} />
                                             <Text className="text-gray-600 ml-2">
-                                                {scannedData.interactions.length === 0 ? "Pas d'interaction détécté" :
-                                                    scannedData.interactions.length === 1 ? `${scannedData.interactions.length} interaction détéctée` :
-                                                        `${scannedData.interactions.length} interactions détéctées`}
+                                                {scannedData.interactions.length === 0
+                                                    ? "Pas d'interaction détectée"
+                                                    : scannedData.interactions.length === 1
+                                                    ? `${scannedData.interactions.length} interaction détectée`
+                                                    : `${scannedData.interactions.length} interactions détectées`}
                                             </Text>
                                         </View>
                                     </View>
@@ -229,32 +369,31 @@ export default function Scan() {
                                     </TouchableOpacity>
                                 </View>
 
-                                {/* Interactions détaillées (visibles au swipe up) */}
+                                {/* Interactions */}
                                 {scannedData.interactions.length > 0 ? (
                                     <View className="border-t border-gray-200 pt-6">
                                         <Text className="text-lg font-semibold text-gray-800 mb-4">
-                                            {scannedData.interactions.length === 0 ? "Pas d'Interaction Détéctée" :
-                                                    scannedData.interactions.length === 1 ? `Interaction Détéctée` :
-                                                        `Interactions Détéctées`}
+                                            {scannedData.interactions.length === 1
+                                                ? 'Interaction Détectée'
+                                                : 'Interactions Détectées'}
                                         </Text>
-
                                         {scannedData.interactions.map((interaction, index) => (
                                             <View
                                                 key={index}
                                                 className={`rounded-xl p-4 mb-3 border-l-4 ${
                                                     interaction.severity === 'Rouge' ? 'border-red-500 bg-red-50' :
-                                                        interaction.severity === 'Orange' ? 'border-orange-500 bg-orange-50' :
-                                                            interaction.severity === 'Bleu' ? 'border-blue-500 bg-blue-50' :
-                                                                'border-green-500 bg-green-50'
+                                                    interaction.severity === 'Orange' ? 'border-orange-500 bg-orange-50' :
+                                                    interaction.severity === 'Bleu' ? 'border-blue-500 bg-blue-50' :
+                                                    'border-green-500 bg-green-50'
                                                 }`}
                                             >
                                                 <View className="flex-row items-center mb-2">
                                                     <View className={`px-3 py-1 rounded-full ${getSeverityColor(interaction.severity)}`}>
                                                         <Text className="text-white text-xs font-semibold">
-                                                            {interaction.severity === 'Rouge' ? 'Danger élevés à connaitre' :
-                                                                interaction.severity === 'Orange' ? 'Risque Modéré à connaitre' :
-                                                                    interaction.severity === 'Bleu' ? 'Risque Potentiel mais faible' :
-                                                                        'Effets bénins ou rare'}
+                                                            {interaction.severity === 'Rouge' ? 'Danger élevé à connaître' :
+                                                             interaction.severity === 'Orange' ? 'Risque Modéré à connaître' :
+                                                             interaction.severity === 'Bleu' ? 'Risque Potentiel mais faible' :
+                                                             'Effets bénins ou rare'}
                                                         </Text>
                                                     </View>
                                                 </View>
@@ -278,10 +417,14 @@ export default function Scan() {
 
                                 {/* Dropdown "Que faire ?" */}
                                 {scannedData.interactions.some(i => i.action) && (
-                                    <View className="mt-4 mb-6">
+                                    <View className="mt-4 mb-2">
                                         <TouchableOpacity
                                             onPress={() => setExpandedAction(!expandedAction)}
-                                            className="flex-row items-center justify-between bg-blue-50 rounded-xl p-4"
+                                            className="flex-row items-center justify-between bg-blue-50 p-4"
+                                            style={expandedAction
+                                                ? { borderTopLeftRadius: 12, borderTopRightRadius: 12 }
+                                                : { borderRadius: 12 }
+                                            }
                                         >
                                             <View className="flex-row items-center flex-1">
                                                 <Text className="text-2xl mr-2">💡</Text>
@@ -295,7 +438,6 @@ export default function Scan() {
                                                 color="#1D4ED8"
                                             />
                                         </TouchableOpacity>
-
                                         {expandedAction && (
                                             <View className="bg-blue-50 rounded-b-xl px-4 pb-4 -mt-2">
                                                 {scannedData.interactions
@@ -303,10 +445,54 @@ export default function Scan() {
                                                     .map((interaction, index) => (
                                                         <View key={index} className="mt-3">
                                                             <Text className="text-sm text-gray-700 leading-5">
-                                                                • {interaction.action.replace("Que faire ? ", "")}
+                                                                • {interaction.action!.replace('Que faire ? ', '')}
                                                             </Text>
                                                         </View>
                                                     ))}
+                                            </View>
+                                        )}
+                                    </View>
+                                )}
+
+                                {/* Dropdown "Sources" */}
+                                {scannedData.sources.length > 0 && (
+                                    <View className="mt-2 mb-6">
+                                        <TouchableOpacity
+                                            onPress={() => setExpandedSources(!expandedSources)}
+                                            className="flex-row items-center justify-between bg-gray-50 p-4"
+                                            style={expandedSources
+                                                ? { borderTopLeftRadius: 12, borderTopRightRadius: 12 }
+                                                : { borderRadius: 12 }
+                                            }
+                                        >
+                                            <View className="flex-row items-center flex-1">
+                                                <Text className="text-2xl mr-2">📚</Text>
+                                                <Text className="text-base font-semibold text-gray-700">
+                                                    Sources
+                                                </Text>
+                                            </View>
+                                            <Ionicons
+                                                name={expandedSources ? 'chevron-up' : 'chevron-down'}
+                                                size={24}
+                                                color="#374151"
+                                            />
+                                        </TouchableOpacity>
+                                        {expandedSources && (
+                                            <View className="bg-gray-50 rounded-b-xl px-4 pb-4 -mt-2">
+                                                {scannedData.sources.map((source, index) => (
+                                                    <TouchableOpacity
+                                                        key={index}
+                                                        onPress={() => Linking.openURL(source)}
+                                                        className="mt-2"
+                                                    >
+                                                        <Text
+                                                            className="text-xs text-blue-600 leading-5 mt-2"
+                                                            numberOfLines={2}
+                                                        >
+                                                            • {source}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                ))}
                                             </View>
                                         )}
                                     </View>
