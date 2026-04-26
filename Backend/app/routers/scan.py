@@ -71,7 +71,7 @@ async def get_product(ean: str, user: User = Depends(security.get_current_active
             raise HTTPException(status_code=404, detail="No complements found")
         
         uuid = get_user_uuid(user.email)
-        add_to_history(uuid, product_name, img_url)
+        add_to_history(uuid, product_name, img_url, ean)
 
 
 

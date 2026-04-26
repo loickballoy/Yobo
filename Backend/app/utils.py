@@ -179,7 +179,7 @@ def get_user_uuid(email: str):
     response = supabase.table('Users').select('*').eq("email", email).execute()
     return response.data[0]["uuid"]
 
-def add_to_history(uuid: str, product_name: str, img_url: str) -> None:
+def add_to_history(uuid: str, product_name: str, img_url: str, barcode: str) -> None:
     supabase = next(get_supabase())
     existing_histo = supabase.table("History").select("*").eq("product_name", product_name).execute()
     if not existing_histo.data:
@@ -188,7 +188,8 @@ def add_to_history(uuid: str, product_name: str, img_url: str) -> None:
             .insert({
                 "user_id": uuid,
                 "product_name": product_name,
-                "img_url": img_url
+                "img_url": img_url,
+                "barcode": barcode,
             }).execute()
         )
     else:
